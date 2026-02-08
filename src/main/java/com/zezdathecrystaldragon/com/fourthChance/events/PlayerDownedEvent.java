@@ -1,13 +1,11 @@
 package com.zezdathecrystaldragon.com.fourthChance.events;
 
-import com.zezdathecrystaldragon.com.fourthChance.PDCUtil;
+import com.zezdathecrystaldragon.com.fourthChance.util.PDCUtil;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DownedPlayer;
-import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DownedPlayerDataType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.jspecify.annotations.Nullable;
 
 public class PlayerDownedEvent extends Event implements Cancellable

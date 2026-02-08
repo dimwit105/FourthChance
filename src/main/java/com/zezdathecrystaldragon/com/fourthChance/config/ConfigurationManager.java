@@ -1,7 +1,8 @@
-package com.zezdathecrystaldragon.com.fourthChance;
+package com.zezdathecrystaldragon.com.fourthChance.config;
 
 import com.ezylang.evalex.EvaluationException;
 import com.ezylang.evalex.parser.ParseException;
+import com.zezdathecrystaldragon.com.fourthChance.FourthChance;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DownedPlayer;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.file.FileConfiguration;

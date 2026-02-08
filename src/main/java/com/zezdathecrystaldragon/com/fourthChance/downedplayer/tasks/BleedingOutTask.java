@@ -1,7 +1,7 @@
 package com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks;
 
-import com.zezdathecrystaldragon.com.fourthChance.DamageUtil;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DownedPlayer;
+import com.zezdathecrystaldragon.com.fourthChance.util.DamageUtil;
 import com.zezdathecrystaldragon.com.fourthChance.FourthChance;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;

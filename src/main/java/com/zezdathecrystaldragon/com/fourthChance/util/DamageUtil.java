@@ -1,4 +1,4 @@
-package com.zezdathecrystaldragon.com.fourthChance;
+package com.zezdathecrystaldragon.com.fourthChance.util;
 
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;

@@ -1,11 +1,9 @@
 package com.zezdathecrystaldragon.com.fourthChance;
 
 import com.tcoded.folialib.FoliaLib;
+import com.zezdathecrystaldragon.com.fourthChance.config.ConfigurationManager;
 import com.zezdathecrystaldragon.com.fourthChance.events.EventListenerManager;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.io.File;
 
 public final class FourthChance extends JavaPlugin {
 

@@ -2,6 +2,8 @@ package com.zezdathecrystaldragon.com.fourthChance.downedplayer;
 
 import com.zezdathecrystaldragon.com.fourthChance.FourthChance;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.BleedingOutTask;
+import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.HealingDownsTask;
+import com.zezdathecrystaldragon.com.fourthChance.util.ReviveReason;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
@@ -224,6 +226,22 @@ public class DownedPlayer
             );
         }
     }
+
+
+    public void incrementReviveForgiveProgress() { reviveForgiveProgress++; }
+    public int getReviveForgiveProgress() { return reviveForgiveProgress; }
+
+    public void decrementReviveCount(int secondsToForgive)
+    {
+        reviveCount--;
+        reviveForgiveProgress = Math.max(0, reviveForgiveProgress - secondsToForgive);
+    }
+
+    public void healMinimumDownedHealth(double amountToHeal)
+    {
+        minimumDownedHealth = Math.min(player.getAttribute(Attribute.MAX_HEALTH).getValue(), minimumDownedHealth + amountToHeal);
+    }
+    public double getMinimumDownedHealth() { return minimumDownedHealth; }
 
     private void removeAllRevivePenaltyAttributeDebuffs()
     {

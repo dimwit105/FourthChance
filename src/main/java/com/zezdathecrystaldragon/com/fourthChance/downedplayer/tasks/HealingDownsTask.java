@@ -1,10 +1,7 @@
-/**This package is intentionally mismatching the folder structure, to access variables from the DownedPlayerClass.
- * The folders are kept separate for organization purposes. Please forgive me!
- */
-package com.zezdathecrystaldragon.com.fourthChance.downedplayer;
+package com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks;
 
-import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.CancellableRunnable;
 import com.zezdathecrystaldragon.com.fourthChance.FourthChance;
+import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DownedPlayer;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 
@@ -28,16 +25,14 @@ public class HealingDownsTask extends CancellableRunnable
     public void run()
     {
         playerMaxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
-        //"CooldownOptions.DownResetTime"
-        downedPlayer.reviveForgiveProgress++;
-        if(downedPlayer.reviveForgiveProgress >= secondsToForgive)
+        downedPlayer.incrementReviveForgiveProgress();
+        if(downedPlayer.getReviveForgiveProgress() >= secondsToForgive)
         {
-            downedPlayer.reviveCount--;
-            downedPlayer.reviveForgiveProgress -= secondsToForgive;
+            downedPlayer.decrementReviveCount(secondsToForgive);
         }
-        downedPlayer.minimumDownedHealth = Math.min(playerMaxHealth, minHealthRegainedPerResetTime);
+        downedPlayer.healMinimumDownedHealth(minHealthRegainedPerResetTime);
 
-        if(downedPlayer.reviveCount == 0 && downedPlayer.minimumDownedHealth == playerMaxHealth)
+        if(downedPlayer.getReviveCount() == 0 && downedPlayer.getMinimumDownedHealth() == playerMaxHealth)
         {
             downedPlayer.fullyHealed();
         }

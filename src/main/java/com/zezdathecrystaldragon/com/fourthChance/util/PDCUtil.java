@@ -1,4 +1,4 @@
-package com.zezdathecrystaldragon.com.fourthChance;
+package com.zezdathecrystaldragon.com.fourthChance.util;
 
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DownedPlayer;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DownedPlayerDataType;

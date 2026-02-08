@@ -1,6 +1,6 @@
 package com.zezdathecrystaldragon.com.fourthChance.events;
 
-import com.zezdathecrystaldragon.com.fourthChance.PDCUtil;
+import com.zezdathecrystaldragon.com.fourthChance.util.PDCUtil;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DownedPlayer;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DuplicateDataException;
 import org.bukkit.Bukkit;
