@@ -33,11 +33,7 @@ public class ConfigurationManager
     {
         Player player = downedPlayer.getPlayer();
         BigDecimal distance;
-        if(downedPlayer.getBleedingTaskIsMoving())
-        {
-            distance = new BigDecimal(1);
-        }
-        else {distance = new BigDecimal(0);}
+        distance = new BigDecimal(downedPlayer.getBleedingTaskIsMoving());
         //Bukkit.broadcastMessage(String.valueOf(lastHitLoc.getOrDefault(player, player.getLocation()).distance(player.getLocation())))
         try {
             return new Expression(getConfig().getString(expression))
@@ -90,7 +86,7 @@ public class ConfigurationManager
         getConfig().addDefault("ReviveOptions.KillRevive", false);
         getConfig().addDefault("ReviveOptions.SelfReviveChance", 0.05D);
         getConfig().addDefault("ReviveOptions.MaxHealthPenalty", "-2");
-        getConfig().addDefault("ReviveOptions.MaxRange", 2.5D);
+        getConfig().addDefault("ReviveOptions.MaxRange", 5.0D);
 
         getConfig().addDefault("ReviveOptions.Teams.RespectTeams", false);
         getConfig().addDefault("ReviveOptions.Teams.IndependentBehavior", "ALL");

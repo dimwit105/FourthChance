@@ -15,5 +15,8 @@ public class EventListenerManager
         Bukkit.getPluginManager().registerEvents(new PlayerDisconnectEventListener(), plugin);
         Bukkit.getPluginManager().registerEvents(new PlayerDeathEventListener(), plugin);
         Bukkit.getPluginManager().registerEvents(new PlayerConnectEventListener(), plugin);
+        Bukkit.getPluginManager().registerEvents(new PlayerMobTargetEventListener(), plugin);
+        Bukkit.getPluginManager().registerEvents(new PlayerHealEventListener(), plugin);
+
     }
 }

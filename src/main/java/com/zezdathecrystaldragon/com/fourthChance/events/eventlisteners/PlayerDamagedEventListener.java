@@ -78,8 +78,9 @@ public class PlayerDamagedEventListener implements Listener
         Player p = (Player) event.getDamager();
 
         DownedPlayer dp = FourthChance.DOWNED_PLAYERS.downedPlayers.get(p);
-        if(dp == null)
+        if(dp == null || !dp.isDowned())
             return;
+
         double multiplier = FourthChance.CONFIG.getConfig().getDouble("DownedOptions.Damage.Outgoing");
         if(multiplier == 0D)
         {

@@ -6,6 +6,7 @@ import com.zezdathecrystaldragon.com.fourthChance.FourthChance;
 import com.zezdathecrystaldragon.com.fourthChance.util.ReviveReason;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
@@ -43,7 +44,7 @@ public class BleedingOutTask extends CancellableRunnable
         {
 
             accumulatedDamage += dirtyDamagePerTick;
-            Bukkit.broadcastMessage("Damage this tick: " + dirtyDamagePerTick + " Accumulated Damage: " + accumulatedDamage);
+            //Bukkit.broadcastMessage("Damage this tick: " + dirtyDamagePerTick + " Accumulated Damage: " + accumulatedDamage);
             if(accumulatedDamage >= 1.0D)
             {
                 double damageToDeal = Math.floor(accumulatedDamage);
@@ -57,12 +58,18 @@ public class BleedingOutTask extends CancellableRunnable
         }
     }
 
-    public boolean isMoving()
+    public int isMoving()
     {
+        int total = 0;
         Location current = player.getLocation();
-        boolean moving = comparePositions(lastTickLocation, current);
+        if (comparePositions(lastTickLocation, current))
+            total++;
+        if (player.isSwimming() || player.getLocation().getBlock().getType() == Material.WATER)
+            total++;
+
         lastTickLocation = current;
-        return moving;
+
+        return total;
     }
     private boolean comparePositions(Location loc1, Location loc2)
     {

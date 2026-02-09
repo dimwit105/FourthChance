@@ -10,9 +10,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
+import org.bukkit.entity.*;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.EquipmentSlotGroup;
@@ -25,7 +23,7 @@ import java.util.UUID;
 
 public class DownedPlayer
 {
-    static Attribute[] zeroedAttributes = {Attribute.ATTACK_DAMAGE, Attribute.ATTACK_KNOCKBACK, Attribute.JUMP_STRENGTH, Attribute.BLOCK_INTERACTION_RANGE};
+    static Attribute[] zeroedAttributes = {Attribute.ATTACK_DAMAGE, Attribute.ATTACK_KNOCKBACK, Attribute.JUMP_STRENGTH, Attribute.BLOCK_INTERACTION_RANGE, Attribute.WATER_MOVEMENT_EFFICIENCY};
     transient private Player player;
     UUID id;
     int reviveCount = 0;
@@ -106,6 +104,7 @@ public class DownedPlayer
         startBleedoutTask();
         applyBleedingAttributeDebuffs();
         stopHealingTask();
+        hideFromMobs();
         player.setHealth(Math.max(downedHealth + bleedthroughDamage, 0));
     }
     public void revive(ReviveReason reason)
@@ -117,6 +116,7 @@ public class DownedPlayer
         downed = false;
         reviveCount++;
         player.setHealth(FourthChance.CONFIG.getFormulaicDouble(this, "ReviveOptions.HealthFormula"));
+        player.removePotionEffect(PotionEffectType.REGENERATION);
 
         stopBleedoutTask();
         stopRevivingTask();
@@ -208,9 +208,9 @@ public class DownedPlayer
         return downed;
     }
     @Nullable
-    public boolean getBleedingTaskIsMoving()
+    public int getBleedingTaskIsMoving()
     {
-        if(bleeding == null) {return false;}
+        if(bleeding == null) {return 0;}
         return bleeding.isMoving();
     }
     private void startHealingTask()
@@ -246,10 +246,11 @@ public class DownedPlayer
 
     public void startRevivingTask(Player reviver)
     {
+        Bukkit.broadcastMessage("Starting the revive task");
         if(reviving != null)
             return;
         this.reviving = new RevivingPlayerTask(reviver, this);
-        FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(reviver, reviving, 10, 10);
+        FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(reviver, reviving, 0, 10);
     }
     public void stopRevivingTask()
     {
@@ -263,6 +264,19 @@ public class DownedPlayer
         if(reviving == null)
             return false;
         return true;
+    }
+
+    private void hideFromMobs()
+    {
+        for(Entity e : player.getNearbyEntities(21, 21, 21))
+        {
+            if(e instanceof Mob)
+            {
+                Mob le = (Mob) e;
+                if(le.getTarget() == player)
+                    le.setTarget(null);
+            }
+        }
     }
 
     private void applyBleedingAttributeDebuffs()
