@@ -17,8 +17,8 @@ public class PlayerRevivingPlayerEventListener implements Listener
             return;
         Player rightClicker = event.getPlayer();
         Player rightClicked = (Player) event.getRightClicked();
-        DownedPlayer reviver = PDCUtil.getDownedPlayerData(rightClicker);
-        DownedPlayer revivee = PDCUtil.getDownedPlayerData(rightClicked);
+        DownedPlayer reviver = FourthChance.DOWNED_PLAYERS.downedPlayers.get(rightClicker);
+        DownedPlayer revivee = FourthChance.DOWNED_PLAYERS.downedPlayers.get(rightClicked);
         if(revivee == null)
             return;
 

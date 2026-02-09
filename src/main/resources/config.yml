@@ -1,0 +1,50 @@
+GeneralOptions:
+  OverKill: -20
+  BleedThrough: false
+  DingWhenBledout: true
+  BeaconRegen: true
+DownedOptions:
+  CrawlSpeedPenalty: 0.33
+  Glow: true
+  Resistance: 3.1
+  RemoveRegeneration: true
+  MobInvisibility: false
+  TotallyAloneRange: 0.0
+  Burnouts:
+    AllowBurnOuts: false
+    BurnoutDamageFormula: '-2'
+  Damage:
+    Outgoing: 0.0
+    Incoming: 0.5
+    Environmental: 1.0
+    Bleedthrough: 1.0
+ReviveOptions:
+  ReviveExtinguish: true
+  Absorption:
+    Enabled: true
+    Length: 7
+    Power: 1
+  ThrowRevive: false
+  KillRevive: false
+  SelfReviveChance: 0.05
+  MaxHealthPenalty: '-2'
+  MaxRange: 2.5
+  Teams:
+    RespectTeams: false
+    IndependentBehavior: ALL
+  HealthFormula: 0.1*m
+  Delay:
+    Type: REGENERATION
+    TimeFormula: '20'
+    Power: 1
+CooldownOptions:
+  Cooldown:
+    Enabled: false
+    Time: 2.0
+    CanceledByHeal: false
+  DownResetTime: 15.0
+BleedingOptions:
+  Health:
+    DownedHealthFormula: 1*m
+    Decay: 3.0
+    DamageFormula: 1 + (1*r)

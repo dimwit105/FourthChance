@@ -67,7 +67,7 @@ public class ConfigurationManager
         getConfig().addDefault("GeneralOptions.DingWhenBledout", true);
         getConfig().addDefault("GeneralOptions.BeaconRegen", true);
 
-        getConfig().addDefault("DownedOptions.CrawlSpeedPenalty", 0.33D);
+        getConfig().addDefault("DownedOptions.CrawlSpeedPenalty", 0.83D);
         getConfig().addDefault("DownedOptions.Glow", true);
         getConfig().addDefault("DownedOptions.Resistance", 3.1D);
         getConfig().addDefault("DownedOptions.RemoveRegeneration", true);
@@ -158,9 +158,10 @@ public class ConfigurationManager
 
         if(!messagesFile.exists())
         {
-            FourthChance.PLUGIN.saveResource("messages.yml", false);
+            //FourthChance.PLUGIN.saveResource("messages.yml", false);
         }
-        FourthChance.PLUGIN.saveDefaultConfig();
+        getConfig().options().copyDefaults(true);
+        FourthChance.PLUGIN.saveConfig();
     }
 
     public FileConfiguration getConfig()

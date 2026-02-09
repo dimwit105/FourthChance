@@ -1,0 +1,13 @@
+package com.zezdathecrystaldragon.com.fourthChance.downedplayer;
+
+import org.bukkit.entity.Player;
+
+import java.util.HashMap;
+
+public class DownedPlayerManager
+{
+    public HashMap<Player, DownedPlayer> downedPlayers = new HashMap<>();
+    public DownedPlayerManager()
+    {
+    }
+}

@@ -32,7 +32,7 @@ public class HealingDownsTask extends CancellableRunnable
         }
         downedPlayer.healMinimumDownedHealth(minHealthRegainedPerResetTime);
 
-        if(downedPlayer.getReviveCount() == 0 && downedPlayer.getMinimumDownedHealth() == playerMaxHealth)
+        if(downedPlayer.getReviveCount() == 0 && downedPlayer.getMinimumDownedHealth() == playerMaxHealth && !downedPlayer.isDowned())
         {
             downedPlayer.fullyHealed();
         }

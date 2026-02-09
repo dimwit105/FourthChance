@@ -1,5 +1,6 @@
 package com.zezdathecrystaldragon.com.fourthChance.events;
 
+import com.zezdathecrystaldragon.com.fourthChance.FourthChance;
 import com.zezdathecrystaldragon.com.fourthChance.util.PDCUtil;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DownedPlayer;
 import org.bukkit.entity.Player;
@@ -19,7 +20,7 @@ public class PlayerDownedEvent extends Event implements Cancellable
     public PlayerDownedEvent(Player p)
     {
         this.playerBeingDowned = p;
-        this.downedPlayerData = PDCUtil.getDownedPlayerData(p);
+        this.downedPlayerData = FourthChance.DOWNED_PLAYERS.downedPlayers.get(p);
     }
     public static HandlerList getHandlerList()
     {

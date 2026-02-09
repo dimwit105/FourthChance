@@ -29,18 +29,23 @@ public class PlayerDamagedEventListener implements Listener
         if(pde.isCancelled())
             return;
 
-        event.setCancelled(true);
-        DownedPlayer dp = PDCUtil.getDownedPlayerData(p);
-        if(dp != null && !dp.isDowned())
-        {
-            dp.incapacitate(event);
-        }
-        else if (dp == null)
+        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.downedPlayers.get(p);
+        Bukkit.broadcastMessage("Trying to incapacitate from event! " + (dp == null));
+
+        if (dp == null)
         {
             try {
                 dp = new DownedPlayer(p.getUniqueId(), event);
             } catch (DuplicateDataException e) {
                 throw new RuntimeException(e);
+            }
+        }
+        else
+        {
+            Bukkit.broadcastMessage("is Down: " + dp.isDowned());
+            if(!dp.isDowned()) {
+                Bukkit.broadcastMessage("Player is not down! Downing!");
+                dp.incapacitate(event);
             }
         }
     }
@@ -52,7 +57,7 @@ public class PlayerDamagedEventListener implements Listener
             return;
         Player p = (Player) event.getEntity();
 
-        DownedPlayer dp = PDCUtil.getDownedPlayerData(p);
+        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.downedPlayers.get(p);
         if(dp == null)
             return;
         double multiplier = FourthChance.CONFIG.getConfig().getDouble("DownedOptions.Damage.Incoming");
@@ -72,7 +77,7 @@ public class PlayerDamagedEventListener implements Listener
             return;
         Player p = (Player) event.getDamager();
 
-        DownedPlayer dp = PDCUtil.getDownedPlayerData(p);
+        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.downedPlayers.get(p);
         if(dp == null)
             return;
         double multiplier = FourthChance.CONFIG.getConfig().getDouble("DownedOptions.Damage.Outgoing");

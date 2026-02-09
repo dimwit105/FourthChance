@@ -48,6 +48,7 @@ public class DownedPlayer
      * @param id The player's UUID
      */
     public DownedPlayer(UUID id, EntityDamageEvent blow) throws DuplicateDataException {
+        Bukkit.broadcastMessage("New DownedPlayer!");
         this.id = id;
         this.player = Bukkit.getPlayer(id);
         if(player.getPersistentDataContainer().has(DOWNED_DATA))
@@ -66,9 +67,8 @@ public class DownedPlayer
                 this.downer = event.getDamager();
             }
         }
+        FourthChance.DOWNED_PLAYERS.downedPlayers.put(player, this);
         incapacitate(blow);
-
-        player.getPersistentDataContainer().set(DOWNED_DATA, new DownedPlayerDataType(), this);
     }
 
     /**
@@ -86,37 +86,33 @@ public class DownedPlayer
         this.reviveForgiveProgress = bb.getInt();
         this.minimumDownedHealth = bb.getDouble();
         this.downed = bb.get() == 1;
-
-        if(downed)
-        {
-            startBleedoutTask();
-        }
-        else
-        {
-            startHealingTask();
-        }
     }
 
     public void incapacitate(EntityDamageEvent blow)
     {
+        Bukkit.broadcastMessage("incapacitate called! " + downed);
         if(downed)
+            return;
+        double downedHealth = FourthChance.CONFIG.getFormulaicDouble(this, "BleedingOptions.Health.DownedHealthFormula");
+        double bleedthroughDamage = player.getHealth() - blow.getFinalDamage();
+        if(downedHealth + bleedthroughDamage <= 0)
             return;
 
         downed = true;
         if(player.hasPotionEffect(PotionEffectType.REGENERATION))
             player.removePotionEffect(PotionEffectType.REGENERATION);
+        blow.setCancelled(true);
 
         startBleedoutTask();
         applyBleedingAttributeDebuffs();
-        startHealingTask();
-        double downedHealth = FourthChance.CONFIG.getFormulaicDouble(this, "BleedingOptions.Health.DownedHealthFormula");
-        double bleedthroughDamage = player.getHealth() - blow.getFinalDamage();
-        player.setHealth(downedHealth + bleedthroughDamage);
+        stopHealingTask();
+        player.setHealth(Math.max(downedHealth + bleedthroughDamage, 0));
     }
     public void revive(ReviveReason reason)
     {
         if(!downed)
             return;
+
 
         downed = false;
         reviveCount++;
@@ -140,12 +136,33 @@ public class DownedPlayer
             stopBleedoutTask();
         if(healing != null)
             stopHealingTask();
+        if(reviving != null)
+            stopRevivingTask();
         pdc.remove(DOWNED_DATA);
+        FourthChance.DOWNED_PLAYERS.downedPlayers.remove(player);
     }
     public void resetPlayer()
     {
         fullyHealed();
         removeBleedingAttributeDebuffs();
+        removeAllRevivePenaltyAttributeDebuffs();
+    }
+    public void onPluginDisable()
+    {
+        stopHealingTask();
+        stopRevivingTask();
+        stopBleedoutTask();
+        player.getPersistentDataContainer().set(DOWNED_DATA, new DownedPlayerDataType(), this);
+    }
+
+    public void onPlayerReconnect()
+    {
+        FourthChance.DOWNED_PLAYERS.downedPlayers.put(player, this);
+        //Should already have attributes applied, and those are saved!
+        if(downed)
+            startBleedoutTask();
+        else
+            startHealingTask();
     }
 
     public void onPlayerDisconnect()
@@ -155,6 +172,10 @@ public class DownedPlayer
             player.setHealth(0D);
             resetPlayer();
         }
+        else
+        {
+            player.getPersistentDataContainer().set(DOWNED_DATA, new DownedPlayerDataType(), this);
+        }
     }
 
 
@@ -162,7 +183,7 @@ public class DownedPlayer
     private void addZeroModifier(Attribute attribute) {
         player.getAttribute(attribute).addModifier(
                 new AttributeModifier(
-                        new NamespacedKey(FourthChance.PLUGIN, "Downed"),
+                        BLEEDING_DEBUFF,
                         -1.0,
                         AttributeModifier.Operation.ADD_SCALAR,
                         EquipmentSlotGroup.ANY
@@ -194,28 +215,39 @@ public class DownedPlayer
     }
     private void startHealingTask()
     {
+        if(healing != null)
+            return;
         this.healing = new HealingDownsTask(this);
         FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(player, healing, 4, 4);
     }
     private void stopHealingTask()
     {
+        if(healing == null)
+            return;
         this.healing.cancel();
         this.healing = null;
     }
     private void startBleedoutTask()
     {
+        if(bleeding != null)
+            return;
         this.bleeding = new BleedingOutTask(this);
         FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(player, bleeding, 4, 4);
     }
 
     private void stopBleedoutTask()
     {
+        if(bleeding == null)
+            return;
+        Bukkit.broadcastMessage("Cancelling Bleed");
         this.bleeding.cancel();
         this.bleeding = null;
     }
 
     public void startRevivingTask(Player reviver)
     {
+        if(reviving != null)
+            return;
         this.reviving = new RevivingPlayerTask(reviver, this);
         FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(reviver, reviving, 10, 10);
     }
@@ -235,7 +267,8 @@ public class DownedPlayer
 
     private void applyBleedingAttributeDebuffs()
     {
-        player.getAttribute(Attribute.MOVEMENT_SPEED).addModifier(new AttributeModifier(BLEEDING_DEBUFF, -1*FourthChance.PLUGIN.getConfig().getDouble(""), AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.ANY));
+        Bukkit.broadcastMessage(BLEEDING_DEBUFF.toString());
+        player.getAttribute(Attribute.MOVEMENT_SPEED).addModifier(new AttributeModifier(BLEEDING_DEBUFF, -1*FourthChance.PLUGIN.getConfig().getDouble("DownedOptions.CrawlSpeedPenalty"), AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.ANY));
         for(Attribute attribute : zeroedAttributes)
         {
             addZeroModifier(attribute);
@@ -244,15 +277,28 @@ public class DownedPlayer
 
     private void removeBleedingAttributeDebuffs()
     {
-        player.getAttribute(Attribute.MOVEMENT_SPEED).getModifiers().removeIf(mod -> mod.getKey().equals(BLEEDING_DEBUFF));
+        Bukkit.broadcastMessage("Trying to remove debuffs!");
+        AttributeInstance movement = player.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (movement != null) {
+            for (AttributeModifier modifier : movement.getModifiers()) {
+                Bukkit.broadcastMessage(modifier.getKey().toString());
+                if (modifier.getKey().equals(BLEEDING_DEBUFF)) {
+                    movement.removeModifier(modifier);
+                }
+            }
+        }
         for(Attribute attribute : zeroedAttributes)
         {
             AttributeInstance instance = player.getAttribute(attribute);
             if (instance == null) continue;
 
-            instance.getModifiers().removeIf(mod ->
-                    mod.getKey().equals(BLEEDING_DEBUFF)
-            );
+            for(AttributeModifier modifier : instance.getModifiers())
+            {
+                if (modifier.getKey().equals(BLEEDING_DEBUFF))
+                {
+                    instance.removeModifier(modifier);
+                }
+            }
         }
     }
 
@@ -263,8 +309,7 @@ public class DownedPlayer
     public void decrementReviveCount(int secondsToForgive)
     {
         reviveCount--;
-        reviveForgiveProgress = Math.max(0, reviveForgiveProgress - secondsToForgive);
-    }
+        reviveForgiveProgress = Math.max(0, reviveForgiveProgress - secondsToForgive);}
 
     public void healMinimumDownedHealth(double amountToHeal)
     {
@@ -275,24 +320,47 @@ public class DownedPlayer
     private void applyRevivePenaltyAttributeDebuff()
     {
         AttributeInstance instance = player.getAttribute(Attribute.MAX_HEALTH);
-        instance.addModifier(new AttributeModifier(REVIVED, FourthChance.CONFIG.getFormulaicDouble(this, "ReviveOptions.MaxHealthPenalty"), AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.ANY));
+        boolean modifierFound = false;
+        for (AttributeModifier am : instance.getModifiers())
+        {
+            if(am.getKey().equals(REVIVED))
+            {
+                AttributeModifier intensified = new AttributeModifier(REVIVED, am.getAmount() + FourthChance.CONFIG.getFormulaicDouble(this, "ReviveOptions.MaxHealthPenalty"), AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY);
+                instance.removeModifier(am);
+                instance.addModifier(intensified);
+                modifierFound = true;
+            }
+        }
+        if (!modifierFound)
+        {
+            instance.addModifier(new AttributeModifier(REVIVED, FourthChance.CONFIG.getFormulaicDouble(this, "ReviveOptions.MaxHealthPenalty"), AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY));
+        }
     }
 
     private void removeAllRevivePenaltyAttributeDebuffs()
     {
         AttributeInstance instance = player.getAttribute(Attribute.MAX_HEALTH);
-        instance.getModifiers().removeIf(mod ->
-                mod.getKey().equals(REVIVED)
-        );
+        boolean modifierFound = false;
+        for (AttributeModifier am : instance.getModifiers())
+        {
+            if(am.getKey().equals(REVIVED))
+            {
+                instance.removeModifier(am);
+            }
+        }
     }
     private void removeOneRevivePenaltyAttributeDebuff()
     {
         AttributeInstance instance = player.getAttribute(Attribute.MAX_HEALTH);
-        AttributeModifier toRemove = instance.getModifiers().stream()
-                .filter(mod -> mod.getKey().equals(REVIVED))
-                .findFirst()
-                .orElse(null);
-
-        if (toRemove != null) instance.removeModifier(toRemove);
+        for (AttributeModifier am : instance.getModifiers())
+        {
+            if(am.getKey().equals(REVIVED))
+            {
+                AttributeModifier reduced = new AttributeModifier(REVIVED, am.getAmount() - FourthChance.CONFIG.getFormulaicDouble(this, "ReviveOptions.MaxHealthPenalty"), AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY);
+                instance.removeModifier(am);
+                if(reduced.getAmount() < 0D)
+                    instance.addModifier(reduced);
+            }
+        }
     }
 }
