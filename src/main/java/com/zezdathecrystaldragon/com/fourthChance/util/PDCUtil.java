@@ -18,20 +18,4 @@ public class PDCUtil
         }
         return null;
     }
-    public static DownedPlayer getOrCreateDownedPlayerData(Player p, EntityDamageEvent blow)
-    {
-        PersistentDataContainer container = p.getPersistentDataContainer();
-        if (container.has(DownedPlayer.DOWNED_DATA))
-        {
-            return container.get(DownedPlayer.DOWNED_DATA, new DownedPlayerDataType());
-        }
-        else
-        {
-            try {
-                return new DownedPlayer(p.getUniqueId(), blow);
-            } catch (DuplicateDataException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
 }

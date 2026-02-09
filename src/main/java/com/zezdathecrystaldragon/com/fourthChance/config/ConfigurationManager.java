@@ -55,6 +55,10 @@ public class ConfigurationManager
             throw new RuntimeException(e);
         }
     }
+    public String prepareMessagePlayerVariable(String path, Player p)
+    {
+       return messages.getString(path).replace("%p", p.getDisplayName());
+    }
         //End formula section
     public void loadConfig()
     {
@@ -85,6 +89,8 @@ public class ConfigurationManager
         getConfig().addDefault("ReviveOptions.ThrowRevive", false);
         getConfig().addDefault("ReviveOptions.KillRevive", false);
         getConfig().addDefault("ReviveOptions.SelfReviveChance", 0.05D);
+        getConfig().addDefault("ReviveOptions.MaxHealthPenalty", "-2");
+        getConfig().addDefault("ReviveOptions.MaxRange", 2.5D);
 
         getConfig().addDefault("ReviveOptions.Teams.RespectTeams", false);
         getConfig().addDefault("ReviveOptions.Teams.IndependentBehavior", "ALL");
@@ -119,6 +125,7 @@ public class ConfigurationManager
         messages.addDefault("Announcements.Messages.SelfRevive", "$1%p is too stubborn to die!");
         messages.addDefault("Announcements.Messages.Death", "$8No one revived %p.");
         messages.addDefault("Announcements.Messages.ReviveIncoming", "You will be revived in %s seconds");
+        messages.addDefault("Announcements.Messages.ReviveBusy", "%p is already being revived!");
         messages.addDefault("Announcements.Messages.ReviveHeal", "You will be revived when you reach full health");
         messages.addDefault("Announcements.Messages.ReviveCancelled", "Damage taken, revive has been cancelled");
         messages.addDefault("Announcements.Messages.ReviveOther", "%p is being revived!");
@@ -156,7 +163,7 @@ public class ConfigurationManager
         FourthChance.PLUGIN.saveDefaultConfig();
     }
 
-    private FileConfiguration getConfig()
+    public FileConfiguration getConfig()
     {
         return FourthChance.PLUGIN.getConfig();
     }

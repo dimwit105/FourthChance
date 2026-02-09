@@ -3,8 +3,11 @@ package com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DownedPlayer;
 import com.zezdathecrystaldragon.com.fourthChance.util.DamageUtil;
 import com.zezdathecrystaldragon.com.fourthChance.FourthChance;
+import com.zezdathecrystaldragon.com.fourthChance.util.ReviveReason;
 import org.bukkit.Location;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffectType;
 
 public class BleedingOutTask extends CancellableRunnable
 {
@@ -32,11 +35,18 @@ public class BleedingOutTask extends CancellableRunnable
     @Override
     public void run()
     {
-        accumulatedDamage += dirtyDamagePerTick;
-        if(accumulatedDamage >= 1.0D)
+        if(!player.hasPotionEffect(PotionEffectType.REGENERATION))
         {
-            player.damage(DamageUtil.getPureDamage(player, 1.0D));
-            accumulatedDamage--;
+            accumulatedDamage += dirtyDamagePerTick;
+            if(accumulatedDamage >= 1.0D)
+            {
+                player.damage(DamageUtil.getPureDamage(player, 1.0D));
+                accumulatedDamage--;
+            }
+        }
+        else if(player.getHealth() + 0.125D >= player.getAttribute(Attribute.MAX_HEALTH).getValue())
+        {
+            downedPlayer.revive(ReviveReason.HEAL);
         }
     }
 

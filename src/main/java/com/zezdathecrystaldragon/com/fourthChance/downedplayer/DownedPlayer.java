@@ -3,6 +3,7 @@ package com.zezdathecrystaldragon.com.fourthChance.downedplayer;
 import com.zezdathecrystaldragon.com.fourthChance.FourthChance;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.BleedingOutTask;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.HealingDownsTask;
+import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.RevivingPlayerTask;
 import com.zezdathecrystaldragon.com.fourthChance.util.ReviveReason;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
@@ -16,6 +17,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.potion.PotionEffectType;
 import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
@@ -35,9 +37,10 @@ public class DownedPlayer
     transient Entity downer = null;
     transient private BleedingOutTask bleeding;
     transient private HealingDownsTask healing;
-    public static final NamespacedKey BLEEDING =  new NamespacedKey(FourthChance.PLUGIN, "bleeding");
+    transient private RevivingPlayerTask reviving = null;
+    public static final NamespacedKey BLEEDING_DEBUFF =  new NamespacedKey(FourthChance.PLUGIN, "bleeding_debuff");
     public static final NamespacedKey DOWNED_DATA = new NamespacedKey(FourthChance.PLUGIN, "downed");
-    public static final NamespacedKey HEALING = new NamespacedKey(FourthChance.PLUGIN, "healing");
+    public static final NamespacedKey REVIVED = new NamespacedKey(FourthChance.PLUGIN, "revived");
 
     /**
      * This constructor is for freshly downed players, will automatically call the internal incapacitate function, and
@@ -100,6 +103,9 @@ public class DownedPlayer
             return;
 
         downed = true;
+        if(player.hasPotionEffect(PotionEffectType.REGENERATION))
+            player.removePotionEffect(PotionEffectType.REGENERATION);
+
         startBleedoutTask();
         applyBleedingAttributeDebuffs();
         startHealingTask();
@@ -114,8 +120,12 @@ public class DownedPlayer
 
         downed = false;
         reviveCount++;
+        player.setHealth(FourthChance.CONFIG.getFormulaicDouble(this, "ReviveOptions.HealthFormula"));
+
         stopBleedoutTask();
+        stopRevivingTask();
         removeBleedingAttributeDebuffs();
+        applyRevivePenaltyAttributeDebuff();
         startHealingTask();
     }
 
@@ -204,9 +214,28 @@ public class DownedPlayer
         this.bleeding = null;
     }
 
+    public void startRevivingTask(Player reviver)
+    {
+        this.reviving = new RevivingPlayerTask(reviver, this);
+        FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(reviver, reviving, 10, 10);
+    }
+    public void stopRevivingTask()
+    {
+        if(reviving == null)
+            return;
+        this.reviving.cancel();
+        reviving = null;
+    }
+    public boolean hasRevivingTask()
+    {
+        if(reviving == null)
+            return false;
+        return true;
+    }
+
     private void applyBleedingAttributeDebuffs()
     {
-        player.getAttribute(Attribute.MOVEMENT_SPEED).addModifier(new AttributeModifier(NamespacedKey.fromString("Downed", FourthChance.PLUGIN), -1*FourthChance.PLUGIN.getConfig().getDouble(""), AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.ANY));
+        player.getAttribute(Attribute.MOVEMENT_SPEED).addModifier(new AttributeModifier(BLEEDING_DEBUFF, -1*FourthChance.PLUGIN.getConfig().getDouble(""), AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.ANY));
         for(Attribute attribute : zeroedAttributes)
         {
             addZeroModifier(attribute);
@@ -215,14 +244,14 @@ public class DownedPlayer
 
     private void removeBleedingAttributeDebuffs()
     {
-        player.getAttribute(Attribute.MOVEMENT_SPEED).getModifiers().removeIf(mod -> "Downed".equals(mod.getKey().getKey()));
+        player.getAttribute(Attribute.MOVEMENT_SPEED).getModifiers().removeIf(mod -> mod.getKey().equals(BLEEDING_DEBUFF));
         for(Attribute attribute : zeroedAttributes)
         {
             AttributeInstance instance = player.getAttribute(attribute);
             if (instance == null) continue;
 
             instance.getModifiers().removeIf(mod ->
-                    "Downed".equals(mod.getKey().getKey())
+                    mod.getKey().equals(BLEEDING_DEBUFF)
             );
         }
     }
@@ -243,18 +272,24 @@ public class DownedPlayer
     }
     public double getMinimumDownedHealth() { return minimumDownedHealth; }
 
+    private void applyRevivePenaltyAttributeDebuff()
+    {
+        AttributeInstance instance = player.getAttribute(Attribute.MAX_HEALTH);
+        instance.addModifier(new AttributeModifier(REVIVED, FourthChance.CONFIG.getFormulaicDouble(this, "ReviveOptions.MaxHealthPenalty"), AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.ANY));
+    }
+
     private void removeAllRevivePenaltyAttributeDebuffs()
     {
         AttributeInstance instance = player.getAttribute(Attribute.MAX_HEALTH);
         instance.getModifiers().removeIf(mod ->
-                "Revived".equals(mod.getKey().getKey())
+                mod.getKey().equals(REVIVED)
         );
     }
     private void removeOneRevivePenaltyAttributeDebuff()
     {
         AttributeInstance instance = player.getAttribute(Attribute.MAX_HEALTH);
         AttributeModifier toRemove = instance.getModifiers().stream()
-                .filter(mod -> "Revived".equals(mod.getKey().getKey()))
+                .filter(mod -> mod.getKey().equals(REVIVED))
                 .findFirst()
                 .orElse(null);
 

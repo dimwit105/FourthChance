@@ -1,4 +1,4 @@
-package com.zezdathecrystaldragon.com.fourthChance.events;
+package com.zezdathecrystaldragon.com.fourthChance.events.eventlisteners;
 
 public class EventListenerManager
 {
