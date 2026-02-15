@@ -16,10 +16,7 @@ public class PlayerHealEventListener implements Listener
         if(event.getEntityType() != EntityType.PLAYER)
             return;
         Player p = (Player) event.getEntity();
-        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.downedPlayers.get(p);
-        if(dp == null)
-            return;
-        if(dp.isDowned())
+        if(FourthChance.DOWNED_PLAYERS.isDowned(p))
         {
             switch (event.getRegainReason())
             {

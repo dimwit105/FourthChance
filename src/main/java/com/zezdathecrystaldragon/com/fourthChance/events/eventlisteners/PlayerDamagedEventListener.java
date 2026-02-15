@@ -42,7 +42,6 @@ public class PlayerDamagedEventListener implements Listener
         }
         else
         {
-            Bukkit.broadcastMessage("is Down: " + dp.isDowned());
             if(!dp.isDowned()) {
                 Bukkit.broadcastMessage("Player is not down! Downing!");
                 dp.incapacitate(event);
@@ -57,8 +56,7 @@ public class PlayerDamagedEventListener implements Listener
             return;
         Player p = (Player) event.getEntity();
 
-        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.downedPlayers.get(p);
-        if(dp == null)
+        if(FourthChance.DOWNED_PLAYERS.isDowned(p))
             return;
         double multiplier = FourthChance.CONFIG.getConfig().getDouble("DownedOptions.Damage.Incoming");
         if(multiplier == 0D)
@@ -77,8 +75,7 @@ public class PlayerDamagedEventListener implements Listener
             return;
         Player p = (Player) event.getDamager();
 
-        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.downedPlayers.get(p);
-        if(dp == null || !dp.isDowned())
+        if(FourthChance.DOWNED_PLAYERS.isDowned(p))
             return;
 
         double multiplier = FourthChance.CONFIG.getConfig().getDouble("DownedOptions.Damage.Outgoing");

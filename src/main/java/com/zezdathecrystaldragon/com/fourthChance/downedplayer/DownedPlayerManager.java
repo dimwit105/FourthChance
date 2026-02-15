@@ -10,4 +10,12 @@ public class DownedPlayerManager
     public DownedPlayerManager()
     {
     }
+
+    public boolean isDowned(Player p)
+    {
+        DownedPlayer dp = downedPlayers.get(p);
+        if(dp == null)
+            return false;
+        return dp.isDowned();
+    }
 }

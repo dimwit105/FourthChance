@@ -27,18 +27,17 @@ public class PlayerRevivingPlayerEventListener implements Listener
             return;
 
         Player rightClicked = (Player) event.getRightClicked();
-        DownedPlayer reviver = FourthChance.DOWNED_PLAYERS.downedPlayers.get(rightClicker);
-        DownedPlayer revivee = FourthChance.DOWNED_PLAYERS.downedPlayers.get(rightClicked);
-        if(revivee == null || !revivee.isDowned()) {
+        if(!FourthChance.DOWNED_PLAYERS.isDowned(rightClicked)) {
             Bukkit.broadcastMessage("Revivee has no data, or is not down, returning");
             return;
         }
 
-        if(reviver != null && reviver.isDowned())
+        if(FourthChance.DOWNED_PLAYERS.isDowned(rightClicker))
         {
             Bukkit.broadcastMessage("Reviver is down, returning");
             return;
         }
+        DownedPlayer revivee = FourthChance.DOWNED_PLAYERS.downedPlayers.get(rightClicked);
         Bukkit.broadcastMessage("Task should be starting!");
 
         //Alive player right clicked a downed player! We need to start a revive task, but ensure no duplicate tasks!

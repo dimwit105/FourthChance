@@ -40,11 +40,9 @@ public class BleedingOutTask extends CancellableRunnable
     {
         dirtyDamagePerSecond = FourthChance.CONFIG.getFormulaicDouble(downedPlayer, "BleedingOptions.Health.DamageFormula");
         dirtyDamagePerTick = dirtyDamagePerSecond / 5.0D;
-        if(!player.hasPotionEffect(PotionEffectType.REGENERATION))
+        if(!player.hasPotionEffect(PotionEffectType.REGENERATION) || !downedPlayer.hasRevivingTask())
         {
-
             accumulatedDamage += dirtyDamagePerTick;
-            //Bukkit.broadcastMessage("Damage this tick: " + dirtyDamagePerTick + " Accumulated Damage: " + accumulatedDamage);
             if(accumulatedDamage >= 1.0D)
             {
                 double damageToDeal = Math.floor(accumulatedDamage);
@@ -56,6 +54,7 @@ public class BleedingOutTask extends CancellableRunnable
         {
             downedPlayer.revive(ReviveReason.HEAL);
         }
+        downedPlayer.setMinimumDownedHealth(player.getHealth());
     }
 
     public int isMoving()

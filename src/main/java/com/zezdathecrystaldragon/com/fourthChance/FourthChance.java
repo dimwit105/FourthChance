@@ -1,12 +1,17 @@
 package com.zezdathecrystaldragon.com.fourthChance;
 
 import com.tcoded.folialib.FoliaLib;
+import com.tcoded.folialib.wrapper.task.WrappedTask;
 import com.zezdathecrystaldragon.com.fourthChance.config.ConfigurationManager;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DownedPlayer;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DownedPlayerManager;
+import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.AbsorptionReviveTask;
 import com.zezdathecrystaldragon.com.fourthChance.events.eventlisteners.EventListenerManager;
 import com.zezdathecrystaldragon.com.fourthChance.util.PDCUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -33,6 +38,7 @@ public final class FourthChance extends JavaPlugin {
     @Override
     public void onDisable()
     {
+        getFoliaLib().getScheduler().cancelAllTasks();
         for(Player p : Bukkit.getOnlinePlayers())
         {
             DownedPlayer dp = DOWNED_PLAYERS.downedPlayers.get(p);

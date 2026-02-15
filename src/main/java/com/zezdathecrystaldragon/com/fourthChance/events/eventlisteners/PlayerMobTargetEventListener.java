@@ -19,10 +19,7 @@ public class PlayerMobTargetEventListener implements Listener
         if(event.getTarget().getType() != EntityType.PLAYER)
             return;
         Player p = (Player)event.getTarget();
-        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.downedPlayers.get(p);
-        if(dp == null)
-            return;
-        if(dp.isDowned())
+        if(FourthChance.DOWNED_PLAYERS.isDowned(p))
             event.setCancelled(true);
     }
 }

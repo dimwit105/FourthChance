@@ -25,7 +25,7 @@ public class ConfigurationManager
      * h = lowest health of the player had while downed.
      * c = current health.
      * f = current player fire ticks. 20 = 1 second of the player being on fire.
-     * d = distance traveled since last instance of damage
+     * d = usually 0, increments by 1 if player is moving, and another if they are in water, for a maxmium of 2.
      */
     //Formula section
 
@@ -86,7 +86,7 @@ public class ConfigurationManager
         getConfig().addDefault("ReviveOptions.KillRevive", false);
         getConfig().addDefault("ReviveOptions.SelfReviveChance", 0.05D);
         getConfig().addDefault("ReviveOptions.MaxHealthPenalty", "-2");
-        getConfig().addDefault("ReviveOptions.MaxRange", 5.0D);
+        getConfig().addDefault("ReviveOptions.MaxRange", 3.0D);
 
         getConfig().addDefault("ReviveOptions.Teams.RespectTeams", false);
         getConfig().addDefault("ReviveOptions.Teams.IndependentBehavior", "ALL");
@@ -123,7 +123,7 @@ public class ConfigurationManager
         messages.addDefault("Announcements.Messages.ReviveIncoming", "You will be revived in %s seconds");
         messages.addDefault("Announcements.Messages.ReviveBusy", "%p is already being revived!");
         messages.addDefault("Announcements.Messages.ReviveHeal", "You will be revived when you reach full health");
-        messages.addDefault("Announcements.Messages.ReviveCancelled", "Damage taken, revive has been cancelled");
+        messages.addDefault("Announcements.Messages.ReviveCancelled", "You have stopped reviving %p!");
         messages.addDefault("Announcements.Messages.ReviveOther", "%p is being revived!");
         messages.addDefault("Announcements.Messages.TeamFail", "You cannot revive someone not on your team!");
         messages.addDefault("Announcements.Messages.PermissionFail", "You can't fix this!");

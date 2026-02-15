@@ -1,12 +1,16 @@
 package com.zezdathecrystaldragon.com.fourthChance.downedplayer;
 
+import com.tcoded.folialib.wrapper.task.WrappedTask;
 import com.zezdathecrystaldragon.com.fourthChance.FourthChance;
+import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.AbsorptionReviveTask;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.BleedingOutTask;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.HealingDownsTask;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.RevivingPlayerTask;
+import com.zezdathecrystaldragon.com.fourthChance.util.DamageUtil;
 import com.zezdathecrystaldragon.com.fourthChance.util.ReviveReason;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
@@ -15,6 +19,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jspecify.annotations.Nullable;
 
@@ -99,12 +104,17 @@ public class DownedPlayer
         downed = true;
         if(player.hasPotionEffect(PotionEffectType.REGENERATION))
             player.removePotionEffect(PotionEffectType.REGENERATION);
+
         blow.setCancelled(true);
+        player.getWorld().playSound(player, Sound.ENTITY_PLAYER_HURT, 1F, 1F);
+        player.setSneaking(true);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, PotionEffect.INFINITE_DURATION, 0, true));
 
         startBleedoutTask();
         applyBleedingAttributeDebuffs();
         stopHealingTask();
         hideFromMobs();
+        DamageUtil.scrubAbsorptionBuffs(player);
         player.setHealth(Math.max(downedHealth + bleedthroughDamage, 0));
     }
     public void revive(ReviveReason reason)
@@ -117,12 +127,14 @@ public class DownedPlayer
         reviveCount++;
         player.setHealth(FourthChance.CONFIG.getFormulaicDouble(this, "ReviveOptions.HealthFormula"));
         player.removePotionEffect(PotionEffectType.REGENERATION);
+        player.removePotionEffect(PotionEffectType.GLOWING);
 
         stopBleedoutTask();
-        stopRevivingTask();
+        stopRevivingTask(true);
         removeBleedingAttributeDebuffs();
         applyRevivePenaltyAttributeDebuff();
         startHealingTask();
+        giveAbsorptionBuff();
     }
 
     /**
@@ -137,7 +149,7 @@ public class DownedPlayer
         if(healing != null)
             stopHealingTask();
         if(reviving != null)
-            stopRevivingTask();
+            stopRevivingTask(false);
         pdc.remove(DOWNED_DATA);
         FourthChance.DOWNED_PLAYERS.downedPlayers.remove(player);
     }
@@ -150,7 +162,7 @@ public class DownedPlayer
     public void onPluginDisable()
     {
         stopHealingTask();
-        stopRevivingTask();
+        stopRevivingTask(false);
         stopBleedoutTask();
         player.getPersistentDataContainer().set(DOWNED_DATA, new DownedPlayerDataType(), this);
     }
@@ -174,6 +186,15 @@ public class DownedPlayer
         }
         else
         {
+            for(WrappedTask wt : FourthChance.PLUGIN.getFoliaLib().getScheduler().getAllTasks())
+            {
+                if(wt instanceof AbsorptionReviveTask)
+                {
+                    AbsorptionReviveTask art = (AbsorptionReviveTask) wt;
+                    if(player == art.player)
+                        art.cancel();
+                }
+            }
             player.getPersistentDataContainer().set(DOWNED_DATA, new DownedPlayerDataType(), this);
         }
     }
@@ -212,6 +233,11 @@ public class DownedPlayer
     {
         if(bleeding == null) {return 0;}
         return bleeding.isMoving();
+    }
+    private void giveAbsorptionBuff()
+    {
+        AbsorptionReviveTask buff = new AbsorptionReviveTask(player, 4);
+        FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(player, buff, 100, 40);
     }
     private void startHealingTask()
     {
@@ -252,11 +278,11 @@ public class DownedPlayer
         this.reviving = new RevivingPlayerTask(reviver, this);
         FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(reviver, reviving, 0, 10);
     }
-    public void stopRevivingTask()
+    public void stopRevivingTask(boolean revived)
     {
         if(reviving == null)
             return;
-        this.reviving.cancel();
+        this.reviving.stopReviving(revived);
         reviving = null;
     }
     public boolean hasRevivingTask()
@@ -331,6 +357,8 @@ public class DownedPlayer
     }
     public double getMinimumDownedHealth() { return minimumDownedHealth; }
 
+    public void setMinimumDownedHealth(double toSet) { minimumDownedHealth = Math.min(minimumDownedHealth, toSet);}
+
     private void applyRevivePenaltyAttributeDebuff()
     {
         AttributeInstance instance = player.getAttribute(Attribute.MAX_HEALTH);
@@ -349,12 +377,12 @@ public class DownedPlayer
         {
             instance.addModifier(new AttributeModifier(REVIVED, FourthChance.CONFIG.getFormulaicDouble(this, "ReviveOptions.MaxHealthPenalty"), AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY));
         }
+        player.sendHealthUpdate();
     }
 
     private void removeAllRevivePenaltyAttributeDebuffs()
     {
         AttributeInstance instance = player.getAttribute(Attribute.MAX_HEALTH);
-        boolean modifierFound = false;
         for (AttributeModifier am : instance.getModifiers())
         {
             if(am.getKey().equals(REVIVED))
@@ -362,19 +390,6 @@ public class DownedPlayer
                 instance.removeModifier(am);
             }
         }
-    }
-    private void removeOneRevivePenaltyAttributeDebuff()
-    {
-        AttributeInstance instance = player.getAttribute(Attribute.MAX_HEALTH);
-        for (AttributeModifier am : instance.getModifiers())
-        {
-            if(am.getKey().equals(REVIVED))
-            {
-                AttributeModifier reduced = new AttributeModifier(REVIVED, am.getAmount() - FourthChance.CONFIG.getFormulaicDouble(this, "ReviveOptions.MaxHealthPenalty"), AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY);
-                instance.removeModifier(am);
-                if(reduced.getAmount() < 0D)
-                    instance.addModifier(reduced);
-            }
-        }
+        player.sendHealthUpdate();
     }
 }
