@@ -18,7 +18,7 @@ public class HealingDownsTask extends CancellableRunnable
         this.player = dp.getPlayer();
         playerMaxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
         secondsToForgive = (int) Math.floor(FourthChance.CONFIG.getFormulaicDouble(downedPlayer, "CooldownOptions.DownResetTime") * 60D);
-        minHealthRegainedPerResetTime =  playerMaxHealth / (FourthChance.CONFIG.getFormulaicDouble(downedPlayer, "CooldownOptions.DownResetTime")*60D);
+        minHealthRegainedPerResetTime =  playerMaxHealth / secondsToForgive;
     }
 
     @Override

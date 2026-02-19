@@ -12,6 +12,11 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.Team;
+
+import java.lang.ref.WeakReference;
+import java.util.logging.Level;
 
 public class PlayerRevivingPlayerEventListener implements Listener
 {
@@ -28,17 +33,20 @@ public class PlayerRevivingPlayerEventListener implements Listener
 
         Player rightClicked = (Player) event.getRightClicked();
         if(!FourthChance.DOWNED_PLAYERS.isDowned(rightClicked)) {
-            Bukkit.broadcastMessage("Revivee has no data, or is not down, returning");
             return;
         }
 
         if(FourthChance.DOWNED_PLAYERS.isDowned(rightClicker))
         {
-            Bukkit.broadcastMessage("Reviver is down, returning");
+            return;
+        }
+        if(FourthChance.CONFIG.getConfig().getBoolean("ReviveOptions.Teams.RespectTeams") && !shareTeams(rightClicker,rightClicked))
+        {
+            rightClicker.sendMessage(FourthChance.CONFIG.prepareMessagePlayerVariable("Announcements.Messages.TeamFail", rightClicker));
             return;
         }
         DownedPlayer revivee = FourthChance.DOWNED_PLAYERS.downedPlayers.get(rightClicked);
-        Bukkit.broadcastMessage("Task should be starting!");
+        WeakReference<DownedPlayer> dpRef = new WeakReference<>(revivee);
 
         //Alive player right clicked a downed player! We need to start a revive task, but ensure no duplicate tasks!
         if(!revivee.hasRevivingTask())
@@ -49,5 +57,51 @@ public class PlayerRevivingPlayerEventListener implements Listener
         {
             rightClicker.sendMessage(FourthChance.CONFIG.prepareMessagePlayerVariable("Announcements.Messages.ReviveBusy", rightClicked));
         }
+    }
+
+    public boolean shareTeams(Player rightclicked, Player rightclicker)
+    {
+        Scoreboard board = FourthChance.PLUGIN.getServer().getScoreboardManager().getMainScoreboard();
+		/*
+		for(Team teams : board.getTeams())
+		{
+			Bukkit.broadcastMessage("Name: " + teams.getName());
+			Bukkit.broadcastMessage("Entries:");
+			for(String entry : teams.getEntries())
+			{
+				Bukkit.broadcastMessage(entry);
+			}
+		}
+		*/
+        Team p = board.getEntryTeam(rightclicked.getName());
+        Team ep = board.getEntryTeam(rightclicker.getName());
+
+        if(p != null && ep != null && p.equals(ep))
+        {
+            return true;
+        }
+        switch(FourthChance.CONFIG.getConfig().getString("ReviveOptions.Teams.IndependentBehavior"))
+        {
+            case "ALL":
+                if(p == null || ep == null)
+                {
+                    return true;
+                }
+                break;
+
+            case "OWN":
+                if(p == null  && ep == null)
+                {
+                    return true;
+                }
+                break;
+
+            case "NONE":
+                break;
+            case null:
+            default:
+                return false;
+        }
+        return false;
     }
 }

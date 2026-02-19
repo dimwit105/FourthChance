@@ -18,6 +18,8 @@ public class EventListenerManager
         Bukkit.getPluginManager().registerEvents(new PlayerMobTargetEventListener(), plugin);
         Bukkit.getPluginManager().registerEvents(new PlayerHealEventListener(), plugin);
         Bukkit.getPluginManager().registerEvents(new PlayerAddPotionEffectEventListener(), plugin);
+        Bukkit.getPluginManager().registerEvents(new PlayerUseItemEventListener(), plugin);
+        Bukkit.getPluginManager().registerEvents(new PlayerRessurrectEventListener(), plugin);
 
     }
 }

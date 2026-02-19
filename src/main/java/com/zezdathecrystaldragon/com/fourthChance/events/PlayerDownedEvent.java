@@ -51,6 +51,6 @@ public class PlayerDownedEvent extends Event implements Cancellable
     @Nullable
     public DownedPlayer getDownedPlayerData()
     {
-        return PDCUtil.getDownedPlayerData(playerBeingDowned);
+        return downedPlayerData;
     }
 }

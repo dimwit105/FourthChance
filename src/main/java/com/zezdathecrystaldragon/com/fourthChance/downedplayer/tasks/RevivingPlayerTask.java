@@ -6,6 +6,7 @@ import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
@@ -84,7 +85,7 @@ public class RevivingPlayerTask extends CancellableRunnable
         int filled = (int) Math.round(reviveProgress * scaleLength);
 
         StringBuilder progressMessage = new StringBuilder();
-        progressMessage.append(ChatColor.RESET).append(String.format("Reviving %s", pRevivee.getDisplayName()));
+        progressMessage.append(ChatColor.RESET).append(String.format("Reviving %s ", pRevivee.getDisplayName()));
 
         for (int i = 0; i < scaleLength; i++) {
             double sectionProgress = (double) i / (scaleLength - 1);
@@ -105,6 +106,8 @@ public class RevivingPlayerTask extends CancellableRunnable
 
         BaseComponent tc = TextComponent.fromLegacy(progressMessage.toString());
         reviver.spigot().sendMessage(ChatMessageType.ACTION_BAR, tc);
+        BaseComponent reviveeMessage = TextComponent.fromLegacy(FourthChance.CONFIG.prepareMessagePlayerVariable("Announcements.Messages.ReviveIncoming", reviver));
+        pRevivee.spigot().sendMessage(ChatMessageType.ACTION_BAR, reviveeMessage);
     }
 
 
@@ -127,6 +130,16 @@ public class RevivingPlayerTask extends CancellableRunnable
 
         return new Color(r, g, 0);
     }
-
-
+    public Player getReviver()
+    {
+        return reviver;
+    }
+    public static void onDisable()
+    {
+        for(Player p : Bukkit.getOnlinePlayers())
+        {
+            if(p.hasPotionEffect(PotionEffectType.REGENERATION) && p.getPotionEffect(PotionEffectType.REGENERATION).getDuration() == PotionEffect.INFINITE_DURATION)
+                p.removePotionEffect(PotionEffectType.REGENERATION);
+        }
+    }
 }

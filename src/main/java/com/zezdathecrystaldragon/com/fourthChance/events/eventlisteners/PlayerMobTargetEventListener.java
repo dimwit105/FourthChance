@@ -19,7 +19,9 @@ public class PlayerMobTargetEventListener implements Listener
         if(event.getTarget().getType() != EntityType.PLAYER)
             return;
         Player p = (Player)event.getTarget();
-        if(FourthChance.DOWNED_PLAYERS.isDowned(p))
+        if(FourthChance.DOWNED_PLAYERS.isDowned(p) && FourthChance.CONFIG.getConfig().getBoolean("DownedOptions.MobInvisibility")) {
             event.setCancelled(true);
+            event.setTarget(null);
+        }
     }
 }

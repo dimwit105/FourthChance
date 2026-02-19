@@ -6,12 +6,13 @@ import com.zezdathecrystaldragon.com.fourthChance.util.PDCUtil;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DownedPlayer;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.DuplicateDataException;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+
+import java.util.logging.Level;
 
 public class PlayerDamagedEventListener implements Listener
 {
@@ -21,6 +22,7 @@ public class PlayerDamagedEventListener implements Listener
         if(event.getEntity().getType() != EntityType.PLAYER)
             return;
         Player p = (Player) event.getEntity();
+        FourthChance.PLUGIN.getLogger().log(Level.WARNING, p.getDisplayName() + " was damaged!");
         if(p.getHealth() - event.getFinalDamage() > 0)
             return;
 
@@ -30,8 +32,6 @@ public class PlayerDamagedEventListener implements Listener
             return;
 
         DownedPlayer dp = FourthChance.DOWNED_PLAYERS.downedPlayers.get(p);
-        Bukkit.broadcastMessage("Trying to incapacitate from event! " + (dp == null));
-
         if (dp == null)
         {
             try {
@@ -43,7 +43,6 @@ public class PlayerDamagedEventListener implements Listener
         else
         {
             if(!dp.isDowned()) {
-                Bukkit.broadcastMessage("Player is not down! Downing!");
                 dp.incapacitate(event);
             }
         }
@@ -56,7 +55,7 @@ public class PlayerDamagedEventListener implements Listener
             return;
         Player p = (Player) event.getEntity();
 
-        if(FourthChance.DOWNED_PLAYERS.isDowned(p))
+        if(!FourthChance.DOWNED_PLAYERS.isDowned(p))
             return;
         double multiplier = FourthChance.CONFIG.getConfig().getDouble("DownedOptions.Damage.Incoming");
         if(multiplier == 0D)
@@ -64,6 +63,18 @@ public class PlayerDamagedEventListener implements Listener
             event.setCancelled(true);
             return;
         }
+        if(event.getDamager() instanceof LivingEntity le)
+        {
+            for (Entity e : p.getNearbyEntities(21,21,21))
+            {
+                if(e instanceof PigZombie pz)
+                {
+                    pz.setAngry(true);
+                    pz.setTarget(le);
+                }
+            }
+        }
+
         event.setDamage(event.getDamage() * FourthChance.CONFIG.getConfig().getDouble("DownedOptions.Damage.Incoming"));
     }
 
@@ -75,7 +86,7 @@ public class PlayerDamagedEventListener implements Listener
             return;
         Player p = (Player) event.getDamager();
 
-        if(FourthChance.DOWNED_PLAYERS.isDowned(p))
+        if(!FourthChance.DOWNED_PLAYERS.isDowned(p))
             return;
 
         double multiplier = FourthChance.CONFIG.getConfig().getDouble("DownedOptions.Damage.Outgoing");

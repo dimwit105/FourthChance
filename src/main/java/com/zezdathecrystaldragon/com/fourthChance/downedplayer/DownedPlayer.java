@@ -7,6 +7,7 @@ import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.BleedingOut
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.HealingDownsTask;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.RevivingPlayerTask;
 import com.zezdathecrystaldragon.com.fourthChance.util.DamageUtil;
+import com.zezdathecrystaldragon.com.fourthChance.util.MessageManager;
 import com.zezdathecrystaldragon.com.fourthChance.util.ReviveReason;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
@@ -24,7 +25,9 @@ import org.bukkit.potion.PotionEffectType;
 import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.UUID;
+import java.util.logging.Level;
 
 public class DownedPlayer
 {
@@ -38,9 +41,12 @@ public class DownedPlayer
     protected boolean downed;
     @Nullable
     transient Entity downer = null;
+    transient EntityDamageEvent.DamageCause lastDamage = null;
     transient private BleedingOutTask bleeding;
     transient private HealingDownsTask healing;
     transient private RevivingPlayerTask reviving = null;
+    //For a later time:
+    //transient private ArrayList<RevivingPlayerTask> revivers = new ArrayList<RevivingPlayerTask>();
     public static final NamespacedKey BLEEDING_DEBUFF =  new NamespacedKey(FourthChance.PLUGIN, "bleeding_debuff");
     public static final NamespacedKey DOWNED_DATA = new NamespacedKey(FourthChance.PLUGIN, "downed");
     public static final NamespacedKey REVIVED = new NamespacedKey(FourthChance.PLUGIN, "revived");
@@ -51,7 +57,6 @@ public class DownedPlayer
      * @param id The player's UUID
      */
     public DownedPlayer(UUID id, EntityDamageEvent blow) throws DuplicateDataException {
-        Bukkit.broadcastMessage("New DownedPlayer!");
         this.id = id;
         this.player = Bukkit.getPlayer(id);
         if(player.getPersistentDataContainer().has(DOWNED_DATA))
@@ -59,18 +64,9 @@ public class DownedPlayer
             throw new DuplicateDataException("Tried to add data to a player that already had some! We should be updating that instead!");
         }
         this.minimumDownedHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
-        if(player.getLastDamageCause() instanceof EntityDamageByEntityEvent event)
-        {
-            if(event.getDamager() instanceof Projectile projectile && projectile.getShooter() instanceof Entity entity)
-            {
-                this.downer = entity;
-            }
-            else
-            {
-                this.downer = event.getDamager();
-            }
-        }
+        updateDowner(blow);
         FourthChance.DOWNED_PLAYERS.downedPlayers.put(player, this);
+        FourthChance.PLUGIN.getLogger().log(Level.INFO, "Making new downedplayer object for " + player.getDisplayName());
         incapacitate(blow);
     }
 
@@ -93,11 +89,10 @@ public class DownedPlayer
 
     public void incapacitate(EntityDamageEvent blow)
     {
-        Bukkit.broadcastMessage("incapacitate called! " + downed);
         if(downed)
             return;
         double downedHealth = FourthChance.CONFIG.getFormulaicDouble(this, "BleedingOptions.Health.DownedHealthFormula");
-        double bleedthroughDamage = player.getHealth() - blow.getFinalDamage();
+        double bleedthroughDamage = (player.getHealth() - blow.getFinalDamage()) * FourthChance.CONFIG.getConfig().getDouble("DownedOptions.Damage.Bleedthrough");
         if(downedHealth + bleedthroughDamage <= 0)
             return;
 
@@ -110,26 +105,28 @@ public class DownedPlayer
         player.setSneaking(true);
         player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, PotionEffect.INFINITE_DURATION, 0, true));
 
+        updateDowner(blow);
         startBleedoutTask();
         applyBleedingAttributeDebuffs();
         stopHealingTask();
-        hideFromMobs();
+        if(FourthChance.CONFIG.getConfig().getBoolean("DownedOptions.MobInvisibility"))
+            hideFromMobs();
         DamageUtil.scrubAbsorptionBuffs(player);
+        MessageManager.onDown(player);
         player.setHealth(Math.max(downedHealth + bleedthroughDamage, 0));
     }
     public void revive(ReviveReason reason)
     {
         if(!downed)
             return;
-
-
         downed = false;
         reviveCount++;
+        stopBleedoutTask();
         player.setHealth(FourthChance.CONFIG.getFormulaicDouble(this, "ReviveOptions.HealthFormula"));
         player.removePotionEffect(PotionEffectType.REGENERATION);
         player.removePotionEffect(PotionEffectType.GLOWING);
-
-        stopBleedoutTask();
+        player.setSneaking(false);
+        MessageManager.onRevive(this, reason);
         stopRevivingTask(true);
         removeBleedingAttributeDebuffs();
         applyRevivePenaltyAttributeDebuff();
@@ -152,6 +149,7 @@ public class DownedPlayer
             stopRevivingTask(false);
         pdc.remove(DOWNED_DATA);
         FourthChance.DOWNED_PLAYERS.downedPlayers.remove(player);
+        System.gc();
     }
     public void resetPlayer()
     {
@@ -170,6 +168,8 @@ public class DownedPlayer
     public void onPlayerReconnect()
     {
         FourthChance.DOWNED_PLAYERS.downedPlayers.put(player, this);
+        FourthChance.PLUGIN.getLogger().log(Level.WARNING, "Loading saved player data for" + player.getDisplayName());
+        FourthChance.PLUGIN.getLogger().log(Level.WARNING, String.format("We have %s revives, and are %s along the way to restoration", reviveCount, reviveForgiveProgress));
         //Should already have attributes applied, and those are saved!
         if(downed)
             startBleedoutTask();
@@ -195,6 +195,9 @@ public class DownedPlayer
                         art.cancel();
                 }
             }
+            stopHealingTask();
+            stopBleedoutTask();
+            stopRevivingTask(false);
             player.getPersistentDataContainer().set(DOWNED_DATA, new DownedPlayerDataType(), this);
         }
     }
@@ -236,15 +239,17 @@ public class DownedPlayer
     }
     private void giveAbsorptionBuff()
     {
-        AbsorptionReviveTask buff = new AbsorptionReviveTask(player, 4);
-        FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(player, buff, 100, 40);
+        AbsorptionReviveTask buff = new AbsorptionReviveTask(player, FourthChance.CONFIG.getConfig().getInt("ReviveOptions.Absorption.Amount"));
+        FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(player, buff,
+                FourthChance.CONFIG.getConfig().getInt("ReviveOptions.Absorption.Length")*20L,
+                FourthChance.CONFIG.getConfig().getInt("ReviveOptions.Absorption.Decay")*20L);
     }
     private void startHealingTask()
     {
         if(healing != null)
             return;
         this.healing = new HealingDownsTask(this);
-        FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(player, healing, 4, 4);
+        FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(player, healing, 20, 20);
     }
     private void stopHealingTask()
     {
@@ -265,14 +270,12 @@ public class DownedPlayer
     {
         if(bleeding == null)
             return;
-        Bukkit.broadcastMessage("Cancelling Bleed");
         this.bleeding.cancel();
         this.bleeding = null;
     }
 
     public void startRevivingTask(Player reviver)
     {
-        Bukkit.broadcastMessage("Starting the revive task");
         if(reviving != null)
             return;
         this.reviving = new RevivingPlayerTask(reviver, this);
@@ -301,13 +304,15 @@ public class DownedPlayer
                 Mob le = (Mob) e;
                 if(le.getTarget() == player)
                     le.setTarget(null);
+
+                if(e instanceof Warden w)
+                    w.clearAnger(player);
             }
         }
     }
 
     private void applyBleedingAttributeDebuffs()
     {
-        Bukkit.broadcastMessage(BLEEDING_DEBUFF.toString());
         player.getAttribute(Attribute.MOVEMENT_SPEED).addModifier(new AttributeModifier(BLEEDING_DEBUFF, -1*FourthChance.PLUGIN.getConfig().getDouble("DownedOptions.CrawlSpeedPenalty"), AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.ANY));
         for(Attribute attribute : zeroedAttributes)
         {
@@ -317,11 +322,9 @@ public class DownedPlayer
 
     private void removeBleedingAttributeDebuffs()
     {
-        Bukkit.broadcastMessage("Trying to remove debuffs!");
         AttributeInstance movement = player.getAttribute(Attribute.MOVEMENT_SPEED);
         if (movement != null) {
             for (AttributeModifier modifier : movement.getModifiers()) {
-                Bukkit.broadcastMessage(modifier.getKey().toString());
                 if (modifier.getKey().equals(BLEEDING_DEBUFF)) {
                     movement.removeModifier(modifier);
                 }
@@ -357,7 +360,12 @@ public class DownedPlayer
     }
     public double getMinimumDownedHealth() { return minimumDownedHealth; }
 
-    public void setMinimumDownedHealth(double toSet) { minimumDownedHealth = Math.min(minimumDownedHealth, toSet);}
+    public void setMinimumDownedHealth(double toSet)
+    {
+        if(!downed)
+            return;
+        minimumDownedHealth = Math.min(minimumDownedHealth, toSet);
+    }
 
     private void applyRevivePenaltyAttributeDebuff()
     {
@@ -391,5 +399,37 @@ public class DownedPlayer
             }
         }
         player.sendHealthUpdate();
+    }
+    private void updateDowner(EntityDamageEvent blow)
+    {
+        if(blow instanceof EntityDamageByEntityEvent event)
+        {
+            if(event.getDamager() instanceof Projectile projectile && projectile.getShooter() instanceof Entity entity)
+            {
+                this.downer = entity;
+            }
+            else
+            {
+                this.downer = event.getDamager();
+            }
+        }
+        lastDamage = blow.getCause();
+    }
+    @Nullable
+    public Entity getDowningEntity()
+    {
+        return downer;
+    }
+    public EntityDamageEvent.DamageCause getDowningCause()
+    {
+        return lastDamage;
+    }
+
+    public Player getReviver()
+    {
+        if(reviving == null)
+            return null;
+
+        return reviving.getReviver();
     }
 }

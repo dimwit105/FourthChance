@@ -2,6 +2,7 @@ package com.zezdathecrystaldragon.com.fourthChance.util;
 
 import com.zezdathecrystaldragon.com.fourthChance.FourthChance;
 import com.zezdathecrystaldragon.com.fourthChance.downedplayer.tasks.AbsorptionReviveTask;
+import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
@@ -16,10 +17,11 @@ public class DamageUtil
 {
     public static double getPureDamage(Player player, double intendedDamage)
     {
+        double damagetoDeal = intendedDamage;
         if(player.hasPotionEffect(PotionEffectType.RESISTANCE))
         {
             double divisor = 0.2*(player.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() + 1);
-            intendedDamage = intendedDamage / Math.max(0.2, 1-divisor);
+            damagetoDeal = intendedDamage / Math.max(0.2, 1-divisor);
         }
         int protectionLevels = 0;
         for(int i = 0; i < player.getInventory().getArmorContents().length; i++)
@@ -30,7 +32,7 @@ public class DamageUtil
             }
         }
         double enchantmentDivisor = 1.0 - Math.min(20, protectionLevels)*0.04;
-        return intendedDamage / enchantmentDivisor;
+        return damagetoDeal / enchantmentDivisor;
     }
     public static void removeOneRevivePenaltyAttributeDebuff(Player player)
     {
@@ -39,7 +41,10 @@ public class DamageUtil
         {
             if(am.getKey().equals(REVIVED))
             {
-                AttributeModifier reduced = new AttributeModifier(REVIVED, am.getAmount() - FourthChance.CONFIG.getFormulaicDouble(FourthChance.DOWNED_PLAYERS.downedPlayers.get(player), "ReviveOptions.MaxHealthPenalty"), AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY);
+                AttributeModifier reduced = new AttributeModifier(REVIVED,
+                        am.getAmount() - FourthChance.CONFIG.getEvaluatedDouble("ReviveOptions.MaxHealthPenalty"),
+                        AttributeModifier.Operation.ADD_NUMBER,
+                        EquipmentSlotGroup.ANY);
                 instance.removeModifier(am);
                 if(reduced.getAmount() < 0D)
                     instance.addModifier(reduced);
