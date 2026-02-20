@@ -1,7 +1,5 @@
 package com.zezdathecrystaldragon.fourthChance.events.eventlisteners;
 
-import java.util.logging.Level;
-
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -9,6 +7,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.PigZombie;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -28,7 +27,6 @@ public class PlayerDamagedEventListener implements Listener
         if(event.getEntity().getType() != EntityType.PLAYER)
             return;
         Player p = (Player) event.getEntity();
-        FourthChance.PLUGIN.getLogger().log(Level.WARNING, p.getDisplayName() + " was damaged!");
         if(p.getHealth() - event.getFinalDamage() > 0)
             return;
 
@@ -62,9 +60,24 @@ public class PlayerDamagedEventListener implements Listener
                 dp.incapacitate(event);
             }
         }
-        if(!(event instanceof EntityDamageByEntityEvent))
+
+    }
+
+    @EventHandler(priority=EventPriority.LOW)
+    public void onEnvironmentalDamage(EntityDamageEvent event)
+    {
+        if(event.getEntity().getType() != EntityType.PLAYER)
+            return;
+        Player p = (Player) event.getEntity();
+        if(!(event instanceof EntityDamageByEntityEvent) && FourthChance.DOWNED_PLAYERS.isDowned(p))
         {
-            event.setDamage(FourthChance.CONFIG.getConfig().getDouble("DownedOptions.Damage.Environmental") * event.getDamage());
+            double multiplier = FourthChance.CONFIG.getConfig().getDouble("DownedOptions.Damage.Environmental");
+            if(multiplier == 0D)
+            {
+                event.setCancelled(true);
+                return;
+            }
+            event.setDamage(multiplier* event.getDamage());
         }
     }
 

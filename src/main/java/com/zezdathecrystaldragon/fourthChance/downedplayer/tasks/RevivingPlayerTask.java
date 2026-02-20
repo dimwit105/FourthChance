@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -66,7 +67,7 @@ public class RevivingPlayerTask extends CancellableRunnable
                 reviver.getEyeLocation().getDirection(),
                 maxRange,
                 0.3D,
-                entity -> entity instanceof Player && entity != reviver
+                entity -> entity instanceof LivingEntity && entity != reviver
             );
 
             if(result == null || result.getHitEntity() != pRevivee || FourthChance.DOWNED_PLAYERS.isDowned(reviver))
