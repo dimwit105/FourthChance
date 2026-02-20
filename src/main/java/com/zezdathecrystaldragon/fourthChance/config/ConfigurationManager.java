@@ -1,19 +1,20 @@
 package com.zezdathecrystaldragon.fourthChance.config;
 
-import com.ezylang.evalex.EvaluationException;
-import com.ezylang.evalex.parser.ParseException;
-import com.zezdathecrystaldragon.fourthChance.FourthChance;
-import com.zezdathecrystaldragon.fourthChance.downedplayer.DownedPlayer;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-import com.ezylang.evalex.Expression;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
-
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+
+import org.bukkit.attribute.Attribute;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+
+import com.ezylang.evalex.EvaluationException;
+import com.ezylang.evalex.Expression;
+import com.ezylang.evalex.parser.ParseException;
+import com.zezdathecrystaldragon.fourthChance.FourthChance;
+import com.zezdathecrystaldragon.fourthChance.downedplayer.DownedPlayer;
 
 public class ConfigurationManager
 {
@@ -100,17 +101,18 @@ public class ConfigurationManager
         getConfig().addDefault("GeneralOptions.DingWhenBledout", true);
         getConfig().addDefault("GeneralOptions.BeaconRegen", true);
         getConfig().addDefault("GeneralOptions.MaxHealth", 20);
+        getConfig().addDefault("GeneralOptions.TotemPriority", "AFTER");
 
         getConfig().addDefault("DownedOptions.CrawlSpeedPenalty", 0.83D);
         getConfig().addDefault("DownedOptions.Glow", true);
         getConfig().addDefault("DownedOptions.MobInvisibility", true);
 
         getConfig().addDefault("DownedOptions.Damage.Outgoing", 0.0D);
-        getConfig().addDefault("DownedOptions.Damage.Incoming", 0.5D);
+        getConfig().addDefault("DownedOptions.Damage.Incoming", 0.2D);
         getConfig().addDefault("DownedOptions.Damage.Environmental", 1.0D);
         getConfig().addDefault("DownedOptions.Damage.Bleedthrough", 1.0D);
 
-        //getConfig().addDefault("ReviveOptions.ReviveExtinguish", true);
+        //getConfig().addDefault("ReviveOptions.ReviveExtinguish", false);
         getConfig().addDefault("ReviveOptions.Absorption.Amount", 4);
         getConfig().addDefault("ReviveOptions.Absorption.Length", 5);
         getConfig().addDefault("ReviveOptions.Absorption.Decay", 2);
@@ -137,15 +139,17 @@ public class ConfigurationManager
         //messages.addDefault("Announcements.Title.Time", 5);
         //messages.addDefault("Announcements.Title.FadeOut", 0.5);
         messages.addDefault("Announcements.Messages.Downed", "&4%p has been incapacitated!");
+        messages.addDefault("Announcements.Messages.Death", "&8No one revived %p.");
+
         messages.addDefault("Announcements.Messages.Revived", "&1%p has been revived!");
         messages.addDefault("Announcements.Messages.SelfRevive", "&1%p is too stubborn to die!");
-        messages.addDefault("Announcements.Messages.Death", "&8No one revived %p.");
+        messages.addDefault("Announcements.Messages.TotemRevive", "&1%r used a Totem of Undying to revive!");
+        messages.addDefault("Announcements.Messages.ReviveOther", "%r has revived %p!");
 
         messages.addDefault("Announcements.Messages.ReviveIncoming", "%p is reviving you!");
         messages.addDefault("Announcements.Messages.SelfRevived", "%p is too stubborn to die!");
         messages.addDefault("Announcements.Messages.ReviveBusy", "%p is already being revived!");
         messages.addDefault("Announcements.Messages.ReviveCancelled", "You have stopped reviving %p!");
-        messages.addDefault("Announcements.Messages.ReviveOther", "%r has revived %p!");
 
         messages.addDefault("Announcements.Messages.TeamFail", "You cannot revive someone not on your team!");
         messages.addDefault("Announcements.Messages.PermissionFail", "You can't fix this!");
@@ -201,6 +205,10 @@ public class ConfigurationManager
     public FileConfiguration getConfig()
     {
         return FourthChance.PLUGIN.getConfig();
+    }
+    public boolean isPartyMode()
+    {
+        return getConfig().getBoolean("GeneralOptions.PartyMode", false);
     }
     public double bleedthroughMultiplier()
     {

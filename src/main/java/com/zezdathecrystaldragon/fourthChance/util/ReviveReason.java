@@ -4,5 +4,6 @@ public enum ReviveReason
 {
     CHANCE,
     HEAL,
+    TOTEM,
     FRIEND
 }

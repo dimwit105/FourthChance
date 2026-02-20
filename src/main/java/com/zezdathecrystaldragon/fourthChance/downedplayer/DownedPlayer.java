@@ -1,5 +1,28 @@
 package com.zezdathecrystaldragon.fourthChance.downedplayer;
 
+import java.nio.ByteBuffer;
+import java.util.UUID;
+import java.util.logging.Level;
+
+import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Mob;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.entity.Warden;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.inventory.EquipmentSlotGroup;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.jspecify.annotations.Nullable;
+
 import com.tcoded.folialib.wrapper.task.WrappedTask;
 import com.zezdathecrystaldragon.fourthChance.FourthChance;
 import com.zezdathecrystaldragon.fourthChance.downedplayer.tasks.AbsorptionReviveTask;
@@ -9,24 +32,6 @@ import com.zezdathecrystaldragon.fourthChance.downedplayer.tasks.RevivingPlayerT
 import com.zezdathecrystaldragon.fourthChance.util.DamageUtil;
 import com.zezdathecrystaldragon.fourthChance.util.MessageManager;
 import com.zezdathecrystaldragon.fourthChance.util.ReviveReason;
-import org.bukkit.Bukkit;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeInstance;
-import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.entity.*;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.inventory.EquipmentSlotGroup;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.jspecify.annotations.Nullable;
-
-import java.nio.ByteBuffer;
-import java.util.UUID;
-import java.util.logging.Level;
 
 public class DownedPlayer
 {
@@ -119,7 +124,7 @@ public class DownedPlayer
         if(!downed)
             return;
         downed = false;
-        reviveCount++;
+        
         stopBleedoutTask();
         player.setHealth(FourthChance.CONFIG.getFormulaicDouble(this, "ReviveOptions.HealthFormula"));
         player.removePotionEffect(PotionEffectType.REGENERATION);
@@ -128,7 +133,11 @@ public class DownedPlayer
         MessageManager.onRevive(this, reason);
         stopRevivingTask(true);
         removeBleedingAttributeDebuffs();
-        applyRevivePenaltyAttributeDebuff();
+        if(reason != ReviveReason.TOTEM)
+        {
+            applyRevivePenaltyAttributeDebuff();
+            reviveCount++;
+        }
         startHealingTask();
         giveAbsorptionBuff();
     }
@@ -187,9 +196,8 @@ public class DownedPlayer
         {
             for(WrappedTask wt : FourthChance.PLUGIN.getFoliaLib().getScheduler().getAllTasks())
             {
-                if(wt instanceof AbsorptionReviveTask)
+                if(wt instanceof AbsorptionReviveTask art)
                 {
-                    AbsorptionReviveTask art = (AbsorptionReviveTask) wt;
                     if(player == art.player)
                         art.cancel();
                 }
