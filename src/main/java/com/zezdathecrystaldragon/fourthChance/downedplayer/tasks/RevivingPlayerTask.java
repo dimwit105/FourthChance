@@ -92,7 +92,8 @@ public class RevivingPlayerTask extends CancellableRunnable
             pRevivee.removePotionEffect(PotionEffectType.REGENERATION);
             pRevivee.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, currentAmplifier, true));
         }
-        
+        BaseComponent reviveeMessage = TextComponent.fromLegacy(FourthChance.CONFIG.prepareMessagePlayerVariable("Announcements.Messages.ReviveIncoming", getRevivers().get(0)));
+        pRevivee.spigot().sendMessage(ChatMessageType.ACTION_BAR, reviveeMessage);
     }
 
     public boolean addReviver(Player reviver)
@@ -153,8 +154,6 @@ public class RevivingPlayerTask extends CancellableRunnable
 
         BaseComponent tc = TextComponent.fromLegacy(progressMessage.toString());
         reviver.spigot().sendMessage(ChatMessageType.ACTION_BAR, tc);
-        BaseComponent reviveeMessage = TextComponent.fromLegacy(FourthChance.CONFIG.prepareMessagePlayerVariable("Announcements.Messages.ReviveIncoming", reviver));
-        pRevivee.spigot().sendMessage(ChatMessageType.ACTION_BAR, reviveeMessage);
     }
 
 
