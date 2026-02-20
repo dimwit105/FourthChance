@@ -1,7 +1,7 @@
 package com.zezdathecrystaldragon.fourthChance.events.eventlisteners;
 
-import com.zezdathecrystaldragon.fourthChance.FourthChance;
-import com.zezdathecrystaldragon.fourthChance.downedplayer.DownedPlayer;
+import java.lang.ref.WeakReference;
+
 import org.bukkit.GameMode;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -12,7 +12,8 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
-import java.lang.ref.WeakReference;
+import com.zezdathecrystaldragon.fourthChance.FourthChance;
+import com.zezdathecrystaldragon.fourthChance.downedplayer.DownedPlayer;
 
 public class PlayerRevivingPlayerEventListener implements Listener
 {
@@ -45,14 +46,7 @@ public class PlayerRevivingPlayerEventListener implements Listener
         WeakReference<DownedPlayer> dpRef = new WeakReference<>(revivee);
 
         //Alive player right clicked a downed player! We need to start a revive task, but ensure no duplicate tasks!
-        if(!revivee.hasRevivingTask())
-        {
-            revivee.startRevivingTask(rightClicker);
-        }
-        else
-        {
-            rightClicker.sendMessage(FourthChance.CONFIG.prepareMessagePlayerVariable("Announcements.Messages.ReviveBusy", rightClicked));
-        }
+        revivee.addReviver(rightClicker);
     }
 
     public boolean shareTeams(Player rightclicked, Player rightclicker)

@@ -281,13 +281,24 @@ public class DownedPlayer
         this.bleeding = null;
     }
 
-    public void startRevivingTask(Player reviver)
+    public void addReviver(Player reviver)
     {
         if(reviving != null)
+        {
+            reviving.addReviver(reviver);
             return;
+        }
         this.reviving = new RevivingPlayerTask(reviver, this);
-        FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(reviver, reviving, 0, 10);
+        FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(player, reviving, 0, 10);
     }
+
+    public Player getReviver()
+    {
+        if(reviving == null || reviving.getRevivers().isEmpty())
+            return null;
+        return reviving.getRevivers().get(0);
+    }
+
     public void stopRevivingTask(boolean revived)
     {
         if(reviving == null)
@@ -430,13 +441,5 @@ public class DownedPlayer
     public EntityDamageEvent.DamageCause getDowningCause()
     {
         return lastDamage;
-    }
-
-    public Player getReviver()
-    {
-        if(reviving == null)
-            return null;
-
-        return reviving.getReviver();
     }
 }

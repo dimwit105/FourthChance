@@ -1,11 +1,11 @@
 package com.zezdathecrystaldragon.fourthChance.downedplayer.tasks;
 
-import com.zezdathecrystaldragon.fourthChance.FourthChance;
-import com.zezdathecrystaldragon.fourthChance.downedplayer.DownedPlayer;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.TextComponent;
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
@@ -13,18 +13,23 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.RayTraceResult;
 
-import java.awt.*;
+import com.zezdathecrystaldragon.fourthChance.FourthChance;
+import com.zezdathecrystaldragon.fourthChance.downedplayer.DownedPlayer;
+
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.TextComponent;
 
 public class RevivingPlayerTask extends CancellableRunnable
-{
-    Player reviver;
-    PotionEffect existingRegen = null;
+{    
+    ArrayList<Player> revivers = new ArrayList<>();
     DownedPlayer revivee;
     Player pRevivee;
     double maxRange;
     public RevivingPlayerTask(Player reviver, DownedPlayer revivee)
     {
-        this.reviver = reviver;
+        this.revivers.add(reviver);
         this.revivee = revivee;
         this.pRevivee = revivee.getPlayer();
         this.maxRange = FourthChance.CONFIG.getConfig().getDouble("ReviveOptions.MaxRange");
@@ -43,7 +48,7 @@ public class RevivingPlayerTask extends CancellableRunnable
     {
         if(revived)
         {
-            reviver.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(FourthChance.CONFIG.prepareMessagePlayerVariable("Announcements.Messages.Revived", pRevivee)));
+            revivers.forEach(reviver -> sendRevivedMessage(reviver));
         }
         this.cancel();
     }
@@ -52,31 +57,72 @@ public class RevivingPlayerTask extends CancellableRunnable
     public void run()
     {
         //double dist = reviver.getEyeLocation().distance(pRevivee.getLocation());
-
-        RayTraceResult result = reviver.getWorld().rayTraceEntities(
+        Iterator<Player> iter = revivers.iterator();
+        while(iter.hasNext())
+        {
+            Player reviver = iter.next();
+            RayTraceResult result = reviver.getWorld().rayTraceEntities(
                 reviver.getEyeLocation(),
                 reviver.getEyeLocation().getDirection(),
                 maxRange,
                 0.3D,
                 entity -> entity instanceof Player && entity != reviver
-        );
+            );
 
-        if(result == null || result.getHitEntity() != pRevivee)
+            if(result == null || result.getHitEntity() != pRevivee || FourthChance.DOWNED_PLAYERS.isDowned(reviver))
+            {
+                iter.remove();
+                sendCancelMessage(reviver);
+                continue;
+            }
+            sendProgressMessage(reviver);
+        }
+
+        if(revivers.isEmpty())
         {
-            PotionEffect effect = pRevivee.getPotionEffect(PotionEffectType.REGENERATION);
-
-            if(effect != null && effect.getDuration() == PotionEffect.INFINITE_DURATION)
-                pRevivee.removePotionEffect(PotionEffectType.REGENERATION);
             revivee.stopRevivingTask(false);
             return;
         }
-        if(!pRevivee.hasPotionEffect(PotionEffectType.REGENERATION))
-            pRevivee.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, 32, false, true));
-        sendProgressMessage();
-
-
+        PotionEffect effect = pRevivee.getPotionEffect(PotionEffectType.REGENERATION);
+        //base amplifer is 32 to distinguish from vanilla regen effects. We use range 32-63 for reviving. Reapply new amplifier each tick, so new revivers can contribute.
+        int currentAmplifier = 32 + Math.min(revivers.size() - 1, 31);
+        if(effect == null || (effect.getAmplifier() != currentAmplifier && effect.getDuration() == PotionEffect.INFINITE_DURATION))
+        {
+            pRevivee.removePotionEffect(PotionEffectType.REGENERATION);
+            pRevivee.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, currentAmplifier, true));
+        }
+        
     }
-    private void sendProgressMessage()
+
+    public boolean addReviver(Player reviver)
+    {
+        if(revivers.contains(reviver))
+            return false;
+        revivers.add(reviver);
+        return true;
+    }
+
+    public boolean removeReviver(Player reviver)
+    {
+        boolean removed = revivers.remove(reviver);
+        if(revivers.isEmpty())
+        {
+            revivee.stopRevivingTask(false);
+        }
+        sendCancelMessage(reviver);
+        return removed;
+    }
+    private void sendRevivedMessage(Player reviver)
+    {
+        BaseComponent tc = TextComponent.fromLegacy(FourthChance.CONFIG.prepareMessagePlayerVariable("Announcements.Messages.Revived", pRevivee));
+        reviver.spigot().sendMessage(ChatMessageType.ACTION_BAR, tc);
+    }
+    private void sendCancelMessage(Player reviver)
+    {
+        BaseComponent tc = TextComponent.fromLegacy(FourthChance.CONFIG.prepareMessagePlayerVariable("Announcements.Messages.ReviveCancelled", pRevivee));
+        reviver.spigot().sendMessage(ChatMessageType.ACTION_BAR, tc);
+    }
+    private void sendProgressMessage(Player reviver)
     {
         double reviveeMaxHealth = pRevivee.getAttribute(Attribute.MAX_HEALTH).getValue();
         double reviveProgress = pRevivee.getHealth() / reviveeMaxHealth;
@@ -130,9 +176,9 @@ public class RevivingPlayerTask extends CancellableRunnable
 
         return new Color(r, g, 0);
     }
-    public Player getReviver()
+    public List<Player> getRevivers()
     {
-        return reviver;
+        return Collections.unmodifiableList(revivers);
     }
     public static void onDisable()
     {
