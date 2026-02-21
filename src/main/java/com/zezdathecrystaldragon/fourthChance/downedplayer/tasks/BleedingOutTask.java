@@ -99,7 +99,7 @@ public class BleedingOutTask extends CancellableRunnable
         double baseDamage = FourthChance.CONFIG.getFormulaicDoubleNoData(player, "BleedingOptions.Health.DamageFormula");
         double maxTime = player.getAttribute(Attribute.MAX_HEALTH).getValue() / baseDamage;
         double timeRemaining = Math.max((player.getHealth() - accumulatedDamage) / dirtyDamagePerSecond, 0);
-        double pct = Math.max(0, Math.min(1, timeRemaining / maxTime)); // clamp 0–1
+        double pct = timeRemaining / maxTime;
 
         boolean flashing = pct <= 0.10;
         ChatColor color;
@@ -124,28 +124,37 @@ public class BleedingOutTask extends CancellableRunnable
     }
 
     private ChatColor interpolateColor(double pct) {
-        // pct = 1 → yellow, pct = 0 → dark red
+        int[] darkRed = {139, 0, 0};
+        int[] red     = {255, 0, 0};
+        int[] orange  = {255, 170, 0};
+        int[] yellow  = {255, 255, 0};
+        int[] green   = {0, 255, 0}; // bright green
 
-        int[] yellow  = {255, 255,   0};
-        int[] orange  = {255, 170,   0};
-        int[] red     = {255,   0,   0};
-        int[] darkRed = {139,   0,   0};
-
-        int[] start, end;
-
-        if (pct > 0.5) {                 // Yellow → Orange
-            double t = (pct - 0.5) * 2;
-            start = yellow; end = orange;
-            return lerpColor(start, end, 1 - t);
-        } else if (pct > 0.1) {          // Orange → Red
-            double t = (pct - 0.1) / 0.4;
-            start = orange; end = red;
-            return lerpColor(start, end, 1 - t);
-        } else {                         // Red → Dark Red
-            double t = pct / 0.1;
-            start = red; end = darkRed;
-            return lerpColor(start, end, 1 - t);
+        if (pct >= 2.0) {
+            return ChatColor.of("#00FF00"); // cap at bright green
         }
+
+        if (pct > 1.0) {
+            // yellow → green (1.0–2.0)
+            double t = pct - 1.0;         // 0 → 1 over this range
+            return lerpColor(yellow, green, t);
+        }
+
+        if (pct > 0.5) {
+            // yellow → orange (0.5–1.0)
+            double t = (pct - 0.5) * 2;
+            return lerpColor(yellow, orange, t);
+        }
+
+        if (pct > 0.1) {
+            // orange → red (0.1–0.5)
+            double t = (pct - 0.1) / 0.4;
+            return lerpColor(orange, red, t);
+        }
+
+        // red → dark red (0–0.1). Kinda pointless since we're flashing here.
+        double t = pct / 0.1;
+        return lerpColor(red, darkRed, t);
     }
 
     private ChatColor lerpColor(int[] a, int[] b, double t) {

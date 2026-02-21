@@ -65,8 +65,8 @@ public class ConfigurationManager
                     .with("m", new BigDecimal(getConfig().getDouble("GeneralOptions.MaxHealth")))
                     .with("b", new BigDecimal(20))
                     .with("h", new BigDecimal(getConfig().getDouble("GeneralOptions.MaxHealth")))
-                    .with("c", new BigDecimal(player.getHealth()))
-                    .with("f", new BigDecimal(player.getFireTicks()))
+                    //.with("c", new BigDecimal(player.getHealth()))
+                    //.with("f", new BigDecimal(player.getFireTicks()))
                     .with("d", distance)
                     .evaluate().getNumberValue().doubleValue();
         } catch (EvaluationException | ParseException e) {
@@ -100,7 +100,7 @@ public class ConfigurationManager
     {
         getConfig().addDefault("GeneralOptions.DingWhenBledout", true);
         getConfig().addDefault("GeneralOptions.BeaconRegen", true);
-        getConfig().addDefault("GeneralOptions.MaxHealth", 20);
+        getConfig().addDefault("GeneralOptions.MaxHealth", 20D);
         getConfig().addDefault("GeneralOptions.TotemPriority", "AFTER");
 
         getConfig().addDefault("DownedOptions.CrawlSpeedPenalty", 0.83D);
