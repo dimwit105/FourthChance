@@ -16,7 +16,7 @@ public class PlayerRessurrectEventListener implements Listener
         if(event.getEntity() instanceof Player p && !event.isCancelled())
         {
             if(FourthChance.DOWNED_PLAYERS.isDowned(p))
-                FourthChance.DOWNED_PLAYERS.downedPlayers.get(p).revive(ReviveReason.TOTEM);
+                FourthChance.DOWNED_PLAYERS.get(p).revive(ReviveReason.TOTEM);
         }
     }
 }

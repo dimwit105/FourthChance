@@ -19,7 +19,7 @@ public class PlayerDownedEvent extends Event implements Cancellable
     public PlayerDownedEvent(Player p)
     {
         this.playerBeingDowned = p;
-        this.downedPlayerData = FourthChance.DOWNED_PLAYERS.downedPlayers.get(p);
+        this.downedPlayerData = FourthChance.DOWNED_PLAYERS.get(p);
     }
     public static HandlerList getHandlerList()
     {

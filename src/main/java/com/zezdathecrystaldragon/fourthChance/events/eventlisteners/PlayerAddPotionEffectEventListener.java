@@ -27,7 +27,7 @@ public class PlayerAddPotionEffectEventListener implements Listener
         Player p = (Player) event.getEntity();
         if(event.getCause() == EntityPotionEffectEvent.Cause.BEACON && !FourthChance.DOWNED_PLAYERS.isDowned(p))
             DamageUtil.removeOneRevivePenaltyAttributeDebuff(p);
-        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.downedPlayers.get(p);
+        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.get(p);
         if(dp == null)
             return;
         if(dp.hasRevivingTask() && event.getOldEffect()!= null && event.getOldEffect().getDuration() == PotionEffect.INFINITE_DURATION)

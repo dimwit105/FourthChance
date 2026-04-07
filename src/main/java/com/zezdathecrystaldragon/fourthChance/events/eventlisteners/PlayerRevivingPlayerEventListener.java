@@ -29,20 +29,18 @@ public class PlayerRevivingPlayerEventListener implements Listener
             return;
 
         Player rightClicked = (Player) event.getRightClicked();
-        if(!FourthChance.DOWNED_PLAYERS.isDowned(rightClicked)) {
+        if(!FourthChance.DOWNED_PLAYERS.isDowned(rightClicked))
             return;
-        }
 
         if(FourthChance.DOWNED_PLAYERS.isDowned(rightClicker))
-        {
             return;
-        }
+
         if(FourthChance.CONFIG.getConfig().getBoolean("ReviveOptions.Teams.RespectTeams") && !shareTeams(rightClicker,rightClicked))
         {
             rightClicker.sendMessage(FourthChance.CONFIG.prepareMessagePlayerVariable("Announcements.Messages.TeamFail", rightClicker));
             return;
         }
-        DownedPlayer revivee = FourthChance.DOWNED_PLAYERS.downedPlayers.get(rightClicked);
+        DownedPlayer revivee = FourthChance.DOWNED_PLAYERS.get(rightClicked);
         WeakReference<DownedPlayer> dpRef = new WeakReference<>(revivee);
 
         //Alive player right clicked a downed player! We need to start a revive task, but ensure no duplicate tasks!
@@ -52,17 +50,7 @@ public class PlayerRevivingPlayerEventListener implements Listener
     public boolean shareTeams(Player rightclicked, Player rightclicker)
     {
         Scoreboard board = FourthChance.PLUGIN.getServer().getScoreboardManager().getMainScoreboard();
-		/*
-		for(Team teams : board.getTeams())
-		{
-			Bukkit.broadcastMessage("Name: " + teams.getName());
-			Bukkit.broadcastMessage("Entries:");
-			for(String entry : teams.getEntries())
-			{
-				Bukkit.broadcastMessage(entry);
-			}
-		}
-		*/
+
         Team p = board.getEntryTeam(rightclicked.getName());
         Team ep = board.getEntryTeam(rightclicker.getName());
 

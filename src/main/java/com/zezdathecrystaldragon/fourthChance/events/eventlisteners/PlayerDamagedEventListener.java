@@ -45,7 +45,7 @@ public class PlayerDamagedEventListener implements Listener
                 return;
         }
 
-        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.downedPlayers.get(p);
+        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.get(p);
         if (dp == null)
         {
             try {

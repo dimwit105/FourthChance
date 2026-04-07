@@ -11,7 +11,7 @@ public class PlayerDisconnectEventListener implements Listener
     @EventHandler
     public void onPlayerDisconnect(PlayerQuitEvent event)
     {
-        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.downedPlayers.get(event.getPlayer());
+        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.get(event.getPlayer());
         if(dp == null)
             return;
         dp.onPlayerDisconnect();

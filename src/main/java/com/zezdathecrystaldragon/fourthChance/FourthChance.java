@@ -9,6 +9,7 @@ import com.zezdathecrystaldragon.fourthChance.downedplayer.tasks.RevivingPlayerT
 import com.zezdathecrystaldragon.fourthChance.events.eventlisteners.EventListenerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Random;
@@ -31,6 +32,12 @@ public final class FourthChance extends JavaPlugin {
         DOWNED_PLAYERS = new DownedPlayerManager();
         foliaLib = new FoliaLib(this);
         new EventListenerManager();
+        getServer().getServicesManager().register(
+                DownedPlayerManager.class,
+                DOWNED_PLAYERS,
+                this,
+                ServicePriority.Normal
+        );
 
     }
 
@@ -43,7 +50,7 @@ public final class FourthChance extends JavaPlugin {
 
         for(Player p : Bukkit.getOnlinePlayers())
         {
-            DownedPlayer dp = DOWNED_PLAYERS.downedPlayers.get(p);
+            DownedPlayer dp = DOWNED_PLAYERS.get(p);
             if(dp != null)
                 dp.onPluginDisable();
 

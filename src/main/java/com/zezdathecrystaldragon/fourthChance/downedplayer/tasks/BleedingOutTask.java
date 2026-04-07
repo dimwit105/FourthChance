@@ -11,8 +11,13 @@ import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class BleedingOutTask extends CancellableRunnable
 {
@@ -22,6 +27,7 @@ public class BleedingOutTask extends CancellableRunnable
     double accumulatedDamage = 0D;
     double dirtyDamagePerSecond;
     double dirtyDamagePerTick;
+    private ArrayList<Entity> stabilizers = new ArrayList<>();
 
 
     /**
@@ -45,7 +51,8 @@ public class BleedingOutTask extends CancellableRunnable
         dirtyDamagePerTick = dirtyDamagePerSecond / 5.0D;
         if(!player.hasPotionEffect(PotionEffectType.REGENERATION) && !downedPlayer.hasRevivingTask())
         {
-            accumulatedDamage += dirtyDamagePerTick;
+            if(calculateStabilizers() <= 0)
+                accumulatedDamage += dirtyDamagePerTick;
             if (accumulatedDamage > player.getHealth())
             {
                 if(FourthChance.RANDOM.nextDouble() < FourthChance.CONFIG.getConfig().getDouble("ReviveOptions.SelfReviveChance"))
@@ -121,6 +128,31 @@ public class BleedingOutTask extends CancellableRunnable
 
         BaseComponent tc = TextComponent.fromLegacy(progressMessage.toString());
         player.spigot().sendMessage(ChatMessageType.ACTION_BAR, tc);
+    }
+    public void addStabilizer(Entity stabilizer)
+    {
+        stabilizers.add(stabilizer);
+    }
+    private int calculateStabilizers()
+    {
+        Iterator<Entity> iter = stabilizers.iterator();
+        while(iter.hasNext())
+        {
+            Entity stabilizer = iter.next();
+            if(stabilizer instanceof Player stab && FourthChance.DOWNED_PLAYERS.isDowned(stab))
+                continue;
+
+            double range = FourthChance.CONFIG.getConfig().getDouble("ReviveOptions.MaxRange");
+            var results = stabilizer.getWorld().rayTraceEntities(stabilizer.getLocation(),
+                    player.getEyeLocation().toVector().subtract(stabilizer.getLocation().toVector()),
+                    range*2, 0.5D,
+                    entity -> entity instanceof LivingEntity && entity != stabilizer);
+
+            if(results == null || results.getHitEntity() != player)
+                iter.remove();
+        }
+
+        return stabilizers.size();
     }
 
     private ChatColor interpolateColor(double pct) {

@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.logging.Level;
 
+import com.zezdathecrystaldragon.fourthChance.events.PlayerRevivedEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
@@ -69,7 +70,7 @@ public class DownedPlayer
         }
         this.minimumDownedHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
         updateDowner(blow);
-        FourthChance.DOWNED_PLAYERS.downedPlayers.put(player, this);
+        FourthChance.DOWNED_PLAYERS.addDownedPlayer(player, this);
         FourthChance.PLUGIN.getLogger().log(Level.INFO, "Making new downedplayer object for " + player.getDisplayName());
         incapacitate(blow);
     }
@@ -123,8 +124,10 @@ public class DownedPlayer
     {
         if(!downed)
             return;
+
         downed = false;
-        
+
+
         stopBleedoutTask();
         player.setHealth(FourthChance.CONFIG.getFormulaicDouble(this, "ReviveOptions.HealthFormula"));
         player.removePotionEffect(PotionEffectType.REGENERATION);
@@ -140,6 +143,8 @@ public class DownedPlayer
         }
         startHealingTask();
         giveAbsorptionBuff();
+        var event = new PlayerRevivedEvent(player, this);
+        Bukkit.getPluginManager().callEvent(event);
     }
 
     /**
@@ -156,7 +161,7 @@ public class DownedPlayer
         if(reviving != null)
             stopRevivingTask(false);
         pdc.remove(DOWNED_DATA);
-        FourthChance.DOWNED_PLAYERS.downedPlayers.remove(player);
+        FourthChance.DOWNED_PLAYERS.removeDownedPlayer(player);
         System.gc();
     }
     public void resetPlayer()
@@ -175,7 +180,7 @@ public class DownedPlayer
 
     public void onPlayerReconnect()
     {
-        FourthChance.DOWNED_PLAYERS.downedPlayers.put(player, this);
+        FourthChance.DOWNED_PLAYERS.addDownedPlayer(player, this);
         FourthChance.PLUGIN.getLogger().log(Level.WARNING, "Loading saved player data for" + player.getDisplayName());
         FourthChance.PLUGIN.getLogger().log(Level.WARNING, String.format("We have %s revives, and are %s along the way to restoration", reviveCount, reviveForgiveProgress));
         //Should already have attributes applied, and those are saved!
@@ -206,6 +211,7 @@ public class DownedPlayer
             stopBleedoutTask();
             stopRevivingTask(false);
             player.getPersistentDataContainer().set(DOWNED_DATA, new DownedPlayerDataType(), this);
+            FourthChance.DOWNED_PLAYERS.removeDownedPlayer(player);
         }
     }
 
@@ -362,7 +368,12 @@ public class DownedPlayer
             }
         }
     }
-
+    public void addStabilizer(Entity e)
+    {
+        if(!downed || bleeding == null)
+            return;
+        bleeding.addStabilizer(e);
+    }
 
     public void incrementReviveForgiveProgress() { reviveForgiveProgress++; }
     public int getReviveForgiveProgress() { return reviveForgiveProgress; }

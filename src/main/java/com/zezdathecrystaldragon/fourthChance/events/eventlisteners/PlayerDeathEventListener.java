@@ -19,7 +19,7 @@ public class PlayerDeathEventListener implements Listener
     {
         FourthChance.PLUGIN.getLogger().log(Level.WARNING, event.getEntity().getDisplayName() + " has died!");
 
-        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.downedPlayers.get(event.getEntity());
+        DownedPlayer dp = FourthChance.DOWNED_PLAYERS.get(event.getEntity());
         if(dp == null)
             return;
 
