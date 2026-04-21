@@ -50,6 +50,7 @@ public class DownedPlayer
     transient private BleedingOutTask bleeding;
     transient private HealingDownsTask healing;
     transient private RevivingPlayerTask reviving = null;
+    transient private AbsorptionReviveTask tempHealth;
     //For a later time:
     //transient private ArrayList<RevivingPlayerTask> revivers = new ArrayList<RevivingPlayerTask>();
     public static final NamespacedKey BLEEDING_DEBUFF =  new NamespacedKey(FourthChance.PLUGIN, "bleeding_debuff");
@@ -199,14 +200,8 @@ public class DownedPlayer
         }
         else
         {
-            for(WrappedTask wt : FourthChance.PLUGIN.getFoliaLib().getScheduler().getAllTasks())
-            {
-                if(wt instanceof AbsorptionReviveTask art)
-                {
-                    if(player == art.player)
-                        art.cancel();
-                }
-            }
+            if(tempHealth != null)
+                tempHealth.cancel();
             stopHealingTask();
             stopBleedoutTask();
             stopRevivingTask(false);
@@ -252,8 +247,11 @@ public class DownedPlayer
     }
     private void giveAbsorptionBuff()
     {
-        AbsorptionReviveTask buff = new AbsorptionReviveTask(player, FourthChance.CONFIG.getConfig().getInt("ReviveOptions.Absorption.Amount"));
-        FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(player, buff,
+        if(tempHealth != null)
+            tempHealth.cancel();
+
+        tempHealth = new AbsorptionReviveTask(player, FourthChance.CONFIG.getConfig().getInt("ReviveOptions.Absorption.Amount"));
+        FourthChance.PLUGIN.getFoliaLib().getScheduler().runAtEntityTimer(player, tempHealth,
                 FourthChance.CONFIG.getConfig().getInt("ReviveOptions.Absorption.Length")*20L,
                 FourthChance.CONFIG.getConfig().getInt("ReviveOptions.Absorption.Decay")*20L);
     }

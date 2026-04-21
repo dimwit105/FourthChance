@@ -20,6 +20,7 @@ public class EventListenerManager
         Bukkit.getPluginManager().registerEvents(new PlayerAddPotionEffectEventListener(), plugin);
         Bukkit.getPluginManager().registerEvents(new PlayerUseItemEventListener(), plugin);
         Bukkit.getPluginManager().registerEvents(new PlayerRessurrectEventListener(), plugin);
+        Bukkit.getPluginManager().registerEvents(new PlayerExhaustionEvent(), plugin);
 
     }
 }

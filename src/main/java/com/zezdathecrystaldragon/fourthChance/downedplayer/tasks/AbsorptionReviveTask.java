@@ -9,6 +9,9 @@ import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlotGroup;
 
+import java.util.Map;
+import java.util.logging.Level;
+
 public class AbsorptionReviveTask extends CancellableRunnable
 {
     public static final NamespacedKey ABSORPTION_BUFF =  new NamespacedKey(FourthChance.PLUGIN, "recently_revived");
@@ -34,7 +37,7 @@ public class AbsorptionReviveTask extends CancellableRunnable
                 instance.removeModifier(am);
             }
         }
-        //FourthChance.PLUGIN.getLogger().log(Level.WARNING, "Cancelling Absorption Revive!");
+        FourthChance.PLUGIN.getLogger().log(Level.WARNING, "Cancelling Absorption Revive!");
         super.cancel();
     }
 
@@ -72,7 +75,7 @@ public class AbsorptionReviveTask extends CancellableRunnable
             {
                 if(am.getKey().equals(ABSORPTION_BUFF))
                 {
-                    p.setAbsorptionAmount(p.getAbsorptionAmount() - am.getAmount());
+                    p.setAbsorptionAmount(Math.max(p.getAbsorptionAmount() - am.getAmount(), 0));
                     instance.removeModifier(am);
                 }
             }
